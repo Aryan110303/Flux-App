@@ -1,10 +1,16 @@
 import { View, Text, ScrollView, Image, TouchableOpacity, ImageSourcePropType, Alert } from 'react-native'
-import React from 'react'
+import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import icons from '@/constants/icons'
 import { settings } from '@/constants/data'
 import { useGlobalContext } from '@/lib/global-provider'
 import { logout } from '@/lib/appwrite'
+import MySavings from '../components/MySavings'
+import Payments from '../components/Payments'
+import DownloadData from '../components/DownloadData'
+import Calendar from '../components/Calendar'
+import InviteFriends from '../components/InviteFriends'
+import About from '../components/About'
 
 interface SettingsItemProps{
   title: string;
@@ -25,8 +31,8 @@ const SettingsItem = ({icon, title, onPress, textStyle, showArrow = true}: Setti
 )
 
 const Profile = () => {
-
   const {user, refetch} = useGlobalContext();
+  const [activeScreen, setActiveScreen] = useState<string | null>(null);
 
   const handleLogOut = async () => {
     const response = await logout();
@@ -39,6 +45,32 @@ const Profile = () => {
     }
   }
 
+  const handleCloseScreen = () => {
+    setActiveScreen(null);
+  }
+
+  const renderScreen = () => {
+    switch (activeScreen) {
+      case 'savings':
+        return <MySavings onClose={handleCloseScreen} />;
+      case 'payments':
+        return <Payments onClose={handleCloseScreen} />;
+      case 'download':
+        return <DownloadData onClose={handleCloseScreen} />;
+      case 'calendar':
+        return <Calendar onClose={handleCloseScreen} />;
+      case 'invite':
+        return <InviteFriends onClose={handleCloseScreen} />;
+      case 'about':
+        return <About onClose={handleCloseScreen} />;
+      default:
+        return null;
+    }
+  }
+
+  if (activeScreen) {
+    return renderScreen();
+  }
 
   return (
     <SafeAreaView className='h-full bg-main'>
@@ -58,16 +90,35 @@ const Profile = () => {
             </View>
           </View>
           <View className='flex flex-col mt-10'>
-            <SettingsItem icon={icons.calendar} title='My Savings'/>
-            <SettingsItem icon={icons.wallet} title='Payments'/>
+            <SettingsItem 
+              icon={icons.calendar} 
+              title='My Savings' 
+              onPress={() => setActiveScreen('savings')}
+            />
+            <SettingsItem 
+              icon={icons.wallet} 
+              title='Payments' 
+              onPress={() => setActiveScreen('payments')}
+            />
           </View>
           <View className='flex flex-col mt-5 border-t pt-5 border-[#fff]'>
-            {settings.map((item, index)=>(
-              <SettingsItem key={index} {...item}/>
+            {settings.map((item, index) => (
+              <SettingsItem 
+                key={index} 
+                icon={item.icon} 
+                title={item.title} 
+                onPress={() => setActiveScreen(item.route.replace('/', ''))}
+              />
             ))}
           </View>
           <View className='flex flex-col mt-5 border-t border-primary pt-5 border-primary-200'>
-            <SettingsItem icon={icons.logout} title='LogOut' textStyle='text-[#F75555]' showArrow={false} onPress={handleLogOut}/>
+            <SettingsItem 
+              icon={icons.logout} 
+              title='LogOut' 
+              textStyle='text-[#F75555]' 
+              showArrow={false} 
+              onPress={handleLogOut}
+            />
           </View>
       </ScrollView>
     </SafeAreaView>

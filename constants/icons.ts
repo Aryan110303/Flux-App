@@ -39,10 +39,18 @@ import news from "@/assets/icons/news.png";
 import cross from "@/assets/icons/cross.png";
 import dustbin from "@/assets/icons/delete.png";
 import download from "@/assets/icons/download.png";
+import chart from "@/assets/icons/chart.png";
+import share from "@/assets/icons/share.png";
+import rewards from "@/assets/icons/rewards.png";
+import group from "@/assets/icons/group.png";
 
 
 
 export default {
+  chart,
+  group,
+  rewards,
+  share,
   download,
   dustbin,
   cross,
