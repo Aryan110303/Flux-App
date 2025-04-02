@@ -1,39 +1,61 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { Stack } from "expo-router";
+import "./global.css";
+import { useFonts } from "expo-font";
+import { useEffect, useState } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { GlobalProvider } from "@/lib/global-provider";
+import { StatusBar } from "expo-status-bar";
+import { UserProvider } from './(root)/context/UserContext'
+import { ExpenseProvider } from './(root)/context/ExpenseContext'
+import { ToastProvider } from './(root)/context/ToastContext'
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { StyleSheet } from "react-native";
+import { DebtProvider } from './(root)/context/DebtContext'
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  const [isReady, setIsReady] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    "Rubik": require("../assets/fonts/Rubik-Regular.ttf"),
+    "Rubik-Medium": require("../assets/fonts/Rubik-Medium.ttf"),
+    "Rubik-Bold": require("../assets/fonts/Rubik-Bold.ttf"),
+    "Rubik-Semibold": require("../assets/fonts/Rubik-SemiBold.ttf"),
+    "Barlow": require("../assets/fonts/BarlowCondensed-Regular.ttf"),
+    "Barlow-Semibold": require("../assets/fonts/BarlowCondensed-SemiBold.ttf"),
   });
 
   useEffect(() => {
-    if (loaded) {
+    if (fontsLoaded) {
+      setIsReady(true);
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded]);
 
-  if (!loaded) {
+  if (!isReady) {
     return null;
   }
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+  return(
+    <GestureHandlerRootView style={styles.container}>
+      <ToastProvider>
+        <UserProvider>
+          <ExpenseProvider>
+            <DebtProvider>
+              <GlobalProvider>
+                <StatusBar style="light" backgroundColor="#1f2630" />
+                <Stack screenOptions={{headerShown: false}} />
+              </GlobalProvider>
+            </DebtProvider>
+          </ExpenseProvider>
+        </UserProvider>
+      </ToastProvider>
+    </GestureHandlerRootView>
+  )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1f2630',
+  },
+});
