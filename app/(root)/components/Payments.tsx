@@ -209,81 +209,75 @@ const Payments = ({ onClose }: PaymentsProps) => {
 
             {/* Add Recurring Payment Modal */}
             {showAddRecurring && (
-              <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
-                <Text className="text-white font-rubik-bold text-lg mb-4">Add Recurring Payment</Text>
-                
-                <View className="mb-4">
-                  <Text className="text-[#9aa0a6] font-rubik mb-2">Title</Text>
-                  <TextInput
-                    value={recurringTitle}
-                    onChangeText={setRecurringTitle}
-                    placeholder="e.g., Rent, Electricity"
-                    placeholderTextColor="#9aa0a6"
-                    className="bg-[#2A3547] p-3 rounded-lg text-white font-rubik"
-                  />
-                </View>
-                
-                <View className="mb-4">
-                  <Text className="text-[#9aa0a6] font-rubik mb-2">Amount (₹)</Text>
-                  <TextInput
-                    value={recurringAmount}
-                    onChangeText={setRecurringAmount}
-                    placeholder="0.00"
-                    placeholderTextColor="#9aa0a6"
-                    keyboardType="numeric"
-                    className="bg-[#2A3547] p-3 rounded-lg text-white font-rubik"
-                  />
-                </View>
-                
-                <View className="mb-4">
-                  <Text className="text-[#9aa0a6] font-rubik mb-2">Frequency</Text>
-                  <View className="flex-row">
-                    <TouchableOpacity 
-                      className={`py-2 px-4 rounded-l-lg ${recurringFrequency === 'weekly' ? 'bg-[#7b80ff]' : 'bg-[#2A3547]'}`}
-                      onPress={() => setRecurringFrequency('weekly')}
-                    >
-                      <Text className={`font-rubik ${recurringFrequency === 'weekly' ? 'text-white' : 'text-[#9aa0a6]'}`}>Weekly</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      className={`py-2 px-4 ${recurringFrequency === 'monthly' ? 'bg-[#7b80ff]' : 'bg-[#2A3547]'}`}
-                      onPress={() => setRecurringFrequency('monthly')}
-                    >
-                      <Text className={`font-rubik ${recurringFrequency === 'monthly' ? 'text-white' : 'text-[#9aa0a6]'}`}>Monthly</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      className={`py-2 px-4 rounded-r-lg ${recurringFrequency === 'yearly' ? 'bg-[#7b80ff]' : 'bg-[#2A3547]'}`}
-                      onPress={() => setRecurringFrequency('yearly')}
-                    >
-                      <Text className={`font-rubik ${recurringFrequency === 'yearly' ? 'text-white' : 'text-[#9aa0a6]'}`}>Yearly</Text>
+              <View className="absolute inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
+                <View className="bg-[#3E4D67] w-full rounded-xl p-8 max-h-[85%]">
+                  <View className="flex-row justify-between items-center mb-8">
+                    <Text className="text-white font-rubik-bold text-xl">Add Recurring Payment</Text>
+                    <TouchableOpacity onPress={() => setShowAddRecurring(false)}>
+                      <Image source={icons.cross} className="size-5" tintColor="#9aa0a6" />
                     </TouchableOpacity>
                   </View>
-                </View>
-                
-                <View className="mb-6">
-                  <Text className="text-[#9aa0a6] font-rubik mb-2">Day of {recurringFrequency}</Text>
-                  <TextInput
-                    value={recurringDay}
-                    onChangeText={setRecurringDay}
-                    placeholder="1"
-                    placeholderTextColor="#9aa0a6"
-                    keyboardType="numeric"
-                    className="bg-[#2A3547] p-3 rounded-lg text-white font-rubik"
-                  />
-                </View>
-                
-                <View className="flex-row justify-between">
-                  <TouchableOpacity 
-                    onPress={() => setShowAddRecurring(false)}
-                    className="bg-[#2A3547] p-3 rounded-lg flex-1 mr-2"
-                  >
-                    <Text className="text-white font-rubik text-center">Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={handleAddRecurring}
-                    className="bg-[#7b80ff] p-3 rounded-lg flex-1 ml-2"
-                  >
-                    <Text className="text-white font-rubik text-center">Add Payment</Text>
-                  </TouchableOpacity>
+                  
+                  <ScrollView showsVerticalScrollIndicator={false} className="max-h-[70vh]">
+                    <View className="mb-6">
+                      <Text className="text-[#9aa0a6] font-rubik mb-2">Title</Text>
+                      <TextInput
+                        value={recurringTitle}
+                        onChangeText={setRecurringTitle}
+                        placeholder="e.g., Rent, Netflix, Gym"
+                        placeholderTextColor="#9aa0a6"
+                        className="bg-[#2A3547] p-4 rounded-lg text-white font-rubik"
+                      />
+                    </View>
+                    
+                    <View className="mb-6">
+                      <Text className="text-[#9aa0a6] font-rubik mb-2">Amount</Text>
+                      <TextInput
+                        value={recurringAmount}
+                        onChangeText={setRecurringAmount}
+                        placeholder="Enter amount"
+                        placeholderTextColor="#9aa0a6"
+                        keyboardType="numeric"
+                        className="bg-[#2A3547] p-4 rounded-lg text-white font-rubik"
+                      />
+                    </View>
+                    
+                    <View className="mb-6">
+                      <Text className="text-[#9aa0a6] font-rubik mb-2">Frequency</Text>
+                      <View className="flex-row">
+                        {['Monthly', 'Weekly', 'Bi-weekly'].map((freq) => (
+                          <TouchableOpacity
+                            key={freq}
+                            onPress={() => setRecurringFrequency(freq)}
+                            className={`flex-1 py-4 rounded-lg mr-2 ${recurringFrequency === freq ? 'bg-[#7b80ff]' : 'bg-[#2A3547]'}`}
+                          >
+                            <Text className={`text-center font-rubik ${recurringFrequency === freq ? 'text-white' : 'text-[#9aa0a6]'}`}>
+                              {freq}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                    
+                    <View className="mb-8">
+                      <Text className="text-[#9aa0a6] font-rubik mb-2">Day</Text>
+                      <TextInput
+                        value={recurringDay}
+                        onChangeText={setRecurringDay}
+                        placeholder={recurringFrequency === 'Monthly' ? 'Day of month (1-31)' : 'Day of week (1-7)'}
+                        placeholderTextColor="#9aa0a6"
+                        keyboardType="numeric"
+                        className="bg-[#2A3547] p-4 rounded-lg text-white font-rubik"
+                      />
+                    </View>
+                    
+                    <TouchableOpacity
+                      onPress={handleAddRecurring}
+                      className="bg-[#7b80ff] p-4 rounded-xl mb-4"
+                    >
+                      <Text className="text-white font-rubik-bold text-center">Add Payment</Text>
+                    </TouchableOpacity>
+                  </ScrollView>
                 </View>
               </View>
             )}

@@ -14,6 +14,9 @@ const DownloadData = ({ onClose }: DownloadDataProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState<'pdf' | 'csv'>('pdf');
 
+  // Check if there's data to download
+  const hasDataToDownload = expenses.length > 0 || savings > 0 || salaryYearly > 0 || goal;
+
   const handleDownload = async (format: 'pdf' | 'csv') => {
     setIsDownloading(true);
     setDownloadFormat(format);
@@ -92,8 +95,8 @@ const DownloadData = ({ onClose }: DownloadDataProps) => {
           
           <TouchableOpacity 
             onPress={() => handleDownload(downloadFormat)}
-            disabled={isDownloading}
-            className={`p-4 rounded-xl flex-row items-center justify-center ${isDownloading ? 'bg-[#2A3547]' : 'bg-[#7b80ff]'}`}
+            disabled={isDownloading || !hasDataToDownload}
+            className={`p-4 rounded-xl flex-row items-center justify-center ${isDownloading || !hasDataToDownload ? 'bg-[#2A3547]' : 'bg-[#7b80ff]'}`}
           >
             {isDownloading ? (
               <>
@@ -107,13 +110,19 @@ const DownloadData = ({ onClose }: DownloadDataProps) => {
               </>
             )}
           </TouchableOpacity>
+          
+          {!hasDataToDownload && (
+            <Text className="text-[#9aa0a6] font-rubik text-center mt-3">
+              Add some expenses or financial data to enable downloads
+            </Text>
+          )}
         </View>
 
         {/* Data Included */}
         <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
-          <Text className="text-white font-rubik-bold text-lg mb-4">Data Included</Text>
+          <Text className="text-white font-rubik-bold text-lg mb-6">Data Included</Text>
           
-          <View className="space-y-3">
+          <View className="gap-y-4">
             <View className="flex-row items-center">
               <View className="bg-[#7b80ff] p-2 rounded-full mr-3">
                 <Image source={icons.expense} className="size-4" tintColor="#ffffff" />

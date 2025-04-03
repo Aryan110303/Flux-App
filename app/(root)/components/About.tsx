@@ -22,7 +22,11 @@ const About = ({ onClose }: AboutProps) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView 
+        className="flex-1 px-6" 
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* App Info */}
         <View className="bg-[#3E4D67] p-6 rounded-xl mb-6 items-center">
           <Image source={images.icon} className="size-20 mb-4" />
