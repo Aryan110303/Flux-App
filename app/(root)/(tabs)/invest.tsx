@@ -1,10 +1,17 @@
-import { View, Text, SafeAreaView, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, FlatList, StatusBar, Platform, Alert } from 'react-native'
+import { View, Text, SafeAreaView, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, FlatList, StatusBar, Platform, Alert, KeyboardAvoidingView } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
 import { useUserContext } from '../context/UserContext';
 import { useExpenses } from '../context/ExpenseContext';
 import { HfInference } from '@huggingface/inference';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+
+// Theme colors - match with tailwind.config.js
+const COLORS = {
+  primary: '#fff',
+  accent: '#7b80ff',
+  main: '#1f2630',
+};
 
 // You'll need to get a free API token from huggingface.co
 // This would normally be stored in .env file, not hardcoded
@@ -1056,8 +1063,15 @@ const InvestScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={Platform.OS === 'ios' ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={[
+      styles.container,
+      // Use platform-specific padding for better handling of bottom area
+      { paddingBottom: 0 }
+    ]}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={COLORS.main} 
+      />
       
       {/* Header with dataset status */}
       <View style={styles.header}>
@@ -1069,63 +1083,67 @@ const InvestScreen = () => {
         )}
       </View>
       
-      <ScrollView
-        style={styles.messageContainer}
-        ref={scrollViewRef}
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Intro card for first-time users */}
-        {messages.length === 1 && (
-          <View style={styles.introCard}>
-            <Text style={styles.introTitle}>Investment Rules & Strategies</Text>
-            <Text style={styles.introText}>
-              Ask about common investment rules like:
-            </Text>
-            <View style={styles.rulesList}>
-              {INVESTMENT_RULES.slice(0, 6).map((rule, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={styles.ruleItem}
-                  onPress={() => handleSuggestedQuestion(`What is the ${rule.name}?`)}
-                >
-                  <Text style={styles.ruleName}>{rule.name}</Text>
-                  <Text style={styles.ruleDesc}>{rule.description}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-        
-        {messages.map((message, index) => (
-          <View 
-            key={index} 
-            style={[
-              styles.messageBubble, 
-              message.role === 'user' ? styles.userBubble : styles.assistantBubble
-            ]}
-          >
-            <Text style={[
-              styles.messageText,
-              message.role === 'user' ? styles.userMessageText : styles.assistantMessageText
-            ]}>
-              {message.content}
-            </Text>
-            {message.role === 'assistant' && message.fromDataset && (
-              <View style={styles.sourceTag}>
-                <Text style={styles.sourceTagText}>From expert dataset</Text>
+      {/* Messages area */}
+      <View style={styles.mainContent}>
+        <ScrollView
+          style={styles.messageContainer}
+          ref={scrollViewRef}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Intro card for first-time users */}
+          {messages.length === 1 && (
+            <View style={styles.introCard}>
+              <Text style={styles.introTitle}>Investment Rules & Strategies</Text>
+              <Text style={styles.introText}>
+                Ask about common investment rules like:
+              </Text>
+              <View style={styles.rulesList}>
+                {INVESTMENT_RULES.slice(0, 6).map((rule, index) => (
+                  <TouchableOpacity 
+                    key={index}
+                    style={styles.ruleItem}
+                    onPress={() => handleSuggestedQuestion(`What is the ${rule.name}?`)}
+                  >
+                    <Text style={styles.ruleName}>{rule.name}</Text>
+                    <Text style={styles.ruleDesc}>{rule.description}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
-          </View>
-        ))}
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#007AFF" />
-            <Text style={styles.loadingText}>Thinking...</Text>
-          </View>
-        )}
-      </ScrollView>
+            </View>
+          )}
+          
+          {messages.map((message, index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.messageBubble, 
+                message.role === 'user' ? styles.userBubble : styles.assistantBubble
+              ]}
+            >
+              <Text style={[
+                styles.messageText,
+                message.role === 'user' ? styles.userMessageText : styles.assistantMessageText
+              ]}>
+                {message.content}
+              </Text>
+              {message.role === 'assistant' && message.fromDataset && (
+                <View style={styles.sourceTag}>
+                  <Text style={styles.sourceTagText}>From expert dataset</Text>
+                </View>
+              )}
+            </View>
+          ))}
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.accent} />
+              <Text style={styles.loadingText}>Thinking...</Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
       
+      {/* Fixed bottom input area */}
       <View style={styles.inputSection}>
         <View style={styles.suggestedContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestedScroll}>
@@ -1147,7 +1165,7 @@ const InvestScreen = () => {
             value={inputText}
             onChangeText={setInputText}
             placeholder="Ask about investments..."
-            placeholderTextColor="#888"
+            placeholderTextColor={`${COLORS.primary}80`}
             multiline
           />
           <TouchableOpacity
@@ -1156,7 +1174,7 @@ const InvestScreen = () => {
             disabled={!inputText.trim() || isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
               <Text style={styles.sendButtonText}>Send</Text>
             )}
@@ -1170,10 +1188,12 @@ const InvestScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'main',
+    backgroundColor: COLORS.main,
+    display: 'flex',
+    flexDirection: 'column',
   },
   header: {
-    backgroundColor: 'main',
+    backgroundColor: COLORS.main,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1181,15 +1201,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(123, 128, 255, 0.2)',
+    borderBottomColor: `${COLORS.accent}33`, // accent with transparency
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: COLORS.primary,
   },
   datasetBadge: {
-    backgroundColor: 'rgba(123, 128, 255, 0.2)',
+    backgroundColor: `${COLORS.accent}33`, // accent with transparency
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1197,15 +1217,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   datasetText: {
-    color: '#7b80ff',
+    color: COLORS.accent,
     fontSize: 12,
+  },
+  mainContent: {
+    flex: 1,
+    paddingBottom: 120, // Reduced padding so there's no empty space
   },
   messageContainer: {
     flex: 1,
+    flexGrow: 1,
+    paddingBottom: 100, // Adjusted for the input section height
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 100, // Adjusted to match the content properly
   },
   messageBubble: {
     padding: 12,
@@ -1213,19 +1239,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     maxWidth: '85%',
     elevation: 1,
-    shadowColor: '#000',
+    shadowColor: '#000', // Keep black for shadow
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
   userBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: 'rgba(123, 128, 255, 0.3)',
+    backgroundColor: `${COLORS.accent}4D`, // accent with 30% opacity
     borderBottomRightRadius: 4,
   },
   assistantBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(62, 77, 103, 0.8)',
+    backgroundColor: `${COLORS.main}CC`, // main with 80% opacity
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -1233,14 +1259,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   userMessageText: {
-    color: '#FFFFFF',
+    color: COLORS.primary,
   },
   assistantMessageText: {
-    color: '#FFFFFF',
+    color: COLORS.primary,
   },
   sourceTag: {
     marginTop: 8,
-    backgroundColor: 'rgba(123, 128, 255, 0.15)',
+    backgroundColor: `${COLORS.accent}26`, // accent with 15% opacity
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1248,46 +1274,72 @@ const styles = StyleSheet.create({
   },
   sourceTagText: {
     fontSize: 12,
-    color: '#7b80ff',
+    color: COLORS.accent,
     fontWeight: '500',
   },
   inputSection: {
-    backgroundColor: '#1a202b',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(123, 128, 255, 0.15)',
+    backgroundColor: `${COLORS.main}F0`,
+    borderTopWidth: 2,
+    borderTopColor: COLORS.accent,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10, // Reduced padding to prevent cutoff
+    paddingTop: 10,
+    padding: 8,
+    position: 'absolute',
+    width: '100%',
+    zIndex: 1000,
+    bottom: 0, // Ensure it's at the bottom
+    marginTop: 'auto',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 10, // Reduced padding
     alignItems: 'center',
+    marginHorizontal: 8,
+    backgroundColor: `${COLORS.main}`,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+    marginBottom: 90,
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(62, 77, 103, 0.5)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#fff',
-    maxHeight: 100,
-    minHeight: 40,
+    backgroundColor: "#FFFFFF", 
+    borderWidth: 2,
+    borderColor: COLORS.accent,
+    borderRadius: 16, // Slightly reduced radius
+    paddingHorizontal: 12, // Reduced padding
+    paddingVertical: 8, // Reduced padding
+    fontSize: 14, // Slightly smaller font
+    color: "#000000",
+    maxHeight: 80,
+    minHeight: 36, // Reduced min height
   },
   sendButton: {
-    width: 50,
-    height: 50,
-    marginLeft: 8,
-    borderRadius: 25,
-    backgroundColor: '#7b80ff',
+    width: 60, // Slightly smaller
+    height: 40, // Slightly smaller
+    marginLeft: 8, // Reduced margin
+    borderRadius: 10,
+    backgroundColor: COLORS.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 3, // Slightly reduced elevation
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
   sendButtonDisabled: {
-    backgroundColor: 'rgba(123, 128, 255, 0.5)',
+    backgroundColor: `${COLORS.accent}80`, // accent with 50% opacity
   },
   sendButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.primary,
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 15, // Smaller font size
   },
   loadingContainer: {
     alignItems: 'center',
@@ -1297,47 +1349,48 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginLeft: 8,
-    color: '#7b80ff',
+    color: COLORS.accent,
     fontSize: 14,
   },
   suggestedContainer: {
-    padding: 12,
+    padding: 4, // Further reduced padding
+    marginBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(123, 128, 255, 0.1)',
+    borderBottomColor: `${COLORS.accent}1A`,
   },
   suggestedScroll: {
     flexDirection: 'row',
   },
   suggestedQuestion: {
-    backgroundColor: 'rgba(123, 128, 255, 0.1)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 16,
+    backgroundColor: `${COLORS.accent}1A`,
+    paddingHorizontal: 10, // Reduced padding
+    paddingVertical: 5, // Reduced padding
+    marginRight: 5, // Reduced margin
+    borderRadius: 12, // Reduced border radius
     borderWidth: 1,
-    borderColor: 'rgba(123, 128, 255, 0.3)',
+    borderColor: `${COLORS.accent}4D`,
   },
   suggestedText: {
-    fontSize: 14,
-    color: '#7b80ff',
+    fontSize: 12, // Smaller font size
+    color: COLORS.accent,
   },
   introCard: {
-    backgroundColor: 'rgba(62, 77, 103, 0.5)',
+    backgroundColor: `${COLORS.main}BF`, // main with 75% opacity
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(123, 128, 255, 0.2)',
+    borderColor: `${COLORS.accent}33`, // accent with 20% opacity
   },
   introTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: COLORS.primary,
     marginBottom: 8,
   },
   introText: {
     fontSize: 14,
-    color: '#bbc0cf',
+    color: COLORS.primary,
     marginBottom: 8,
   },
   rulesList: {
@@ -1346,19 +1399,19 @@ const styles = StyleSheet.create({
   ruleItem: {
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(123, 128, 255, 0.3)',
+    borderColor: `${COLORS.accent}4D`, // accent with 30% opacity
     borderRadius: 8,
     marginVertical: 4,
-    backgroundColor: 'rgba(62, 77, 103, 0.3)',
+    backgroundColor: `${COLORS.main}99`, // main with 60% opacity
   },
   ruleName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#7b80ff',
+    color: COLORS.accent,
   },
   ruleDesc: {
     fontSize: 14,
-    color: '#bbc0cf',
+    color: COLORS.primary,
     marginTop: 4,
   },
 });
