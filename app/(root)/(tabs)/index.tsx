@@ -43,22 +43,22 @@ const ServiceButton = ({icon, title, onPress, textStyle, sideText}: ServiceProps
         <TouchableOpacity
           onPress={handlePress}
           className={`flex justify-center ${isCompactButton ? "pl-4 items-center" : "pl-6"} ${textStyle} ${isCompactButton ? "w-[140px] h-[45px]" : "w-[11rem] h-[6rem]"} rounded-xl border border-[#fff8] ${isCompactButton ? "bg-[#3E4D67]" : ""}`}
-          style={{
-            shadowColor: "#fff",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 3,
-          }}
-        >
+      style={{
+        shadowColor: "#fff",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      }}
+    >
           <View className={`flex flex-row items-center ${isCompactButton ? "gap-2" : "gap-4"}`}>
             <Image source={icon} className={`${isCompactButton ? "size-5" : "size-9"}`} tintColor={"#7b80ff"} />
             <Text className={`text-primary ${isCompactButton ? "text-[11px] max-w-[70px]" : "text-xs max-w-[4.5rem]"} text-center font-rubik`}>{sideText}</Text>
           </View>
         </TouchableOpacity>
         <Text className="text-[#fff] font-rubik text-xs mt-2 text-center w-full">{title}</Text>
-      </View>
     </View>
-  )
+  </View>
+)
 }
 
 
@@ -275,7 +275,7 @@ export default function Home() {
   }, [showDebts]);
 
   // Clear expenses on initial load for testing
-  useEffect(() => {
+useEffect(() => {
     clearExpenses();
     console.log('Expenses cleared on initial load');
   }, []);
@@ -316,7 +316,7 @@ export default function Home() {
 
   return (
     showAllExpenses ? (
-      <View className="bg-[#1f2630] h-full">
+      <View className="bg-main h-full">
         {isSalaryInputComplete ? (
           <>
             <ExpenseList 
@@ -379,7 +379,7 @@ export default function Home() {
         )}
       </View>
     ) : (
-      <SafeAreaView className="bg-[#1f2630] h-full">
+      <SafeAreaView className="bg-main h-full">
         <SavingsCalculator />
         <InputNumberAnnual 
           isVisible={isModalVisibleYearly} 
@@ -419,19 +419,19 @@ export default function Home() {
             setShowDebts(false);
           }} />
         ) : (
-          <ScrollView 
+        <ScrollView 
             showsVerticalScrollIndicator={false} 
             contentContainerStyle={{ paddingBottom: 120 }}
             className="h-full"
           >
             <View className="px-1">
               <View className="flex flex-row items-center justify-between mt-12 px-5">
-                <View className="flex flex-row items-center">
+            <View className="flex flex-row items-center">
                   <TouchableOpacity onPress={() => router.push("/profile")}>
                     <Image source={images.avatar} className="rounded-full size-12" />
                   </TouchableOpacity>
-                  <View className="flex flex-col ml-2 items-start justify-center">
-                    <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
+              <View className="flex flex-col ml-2 items-start justify-center">
+                <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
                     <Text className="text-[#fff] text-base font-rubik-medium">{user?.name}</Text>
                   </View>
                 </View>
@@ -442,11 +442,11 @@ export default function Home() {
               </View>
             </View>
 
-            <View className="px-5">
-              <View className="mt-8">
+        <View className="px-5">
+          <View className="mt-8">
                 <Text className="text-[#fff] font-rubik-bold text-md">Monthly Savings</Text>
-                <View className="flex flex-row justify-between mt-1">
-                  <View>
+            <View className="flex flex-row justify-between mt-1">
+              <View>
                     <Text style={[styles.amountText, { fontFamily: 'Barlow-Semibold' }]}>
                       {currency === 'USD' ? `$${changeAmount}` : `₹${savings}`}
                     </Text>
@@ -460,31 +460,31 @@ export default function Home() {
                         </Text>
                       </View>
                     )}
-                  </View>
-                  <Dropdown
-                    data={currencies}
-                    labelField="label"
-                    valueField="value"
-                    value={currency}
-                    onChange={(item) => {
-                      setCurrency(item.value);
-                    }}
+              </View>
+              <Dropdown
+                data={currencies}
+                labelField="label"
+                valueField="value"
+                value={currency}
+                onChange={(item) => {
+                  setCurrency(item.value);
+                }}
                     selectedTextStyle={{ color: "#fff", fontSize: 16, fontFamily: "Rubik-Medium" }}
                     itemTextStyle={{ color: "#fff", fontSize: 16, fontFamily: "Rubik" }}
                     iconStyle={{ tintColor: "#fff", width: 20, height: 20 }}
-                    containerStyle={styles.dropdownContainer} 
-                    itemContainerStyle={styles.dropdownItem}
-                    style={styles.dropdown}
+                containerStyle={styles.dropdownContainer} 
+                itemContainerStyle={styles.dropdownItem}
+                style={styles.dropdown}
                     activeColor="#343f52"
                     placeholder="Select"
-                  />
-                </View>
-              </View>
+                />
             </View>
+          </View>
+        </View>
 
-            <View>
-              {goal!=null ? <GoalBar/>:""}
-            </View>
+        <View>
+          {goal!=null ? <GoalBar/>:""}
+        </View>
 
             {/* Feature Cards Row */}
             <View className="px-6 mt-6">
@@ -511,8 +511,8 @@ export default function Home() {
               </View>
             </View>
 
-            <View className="px-6">
-              <View className="flex flex-row items-center justify-around mt-8">
+        <View className="px-6">
+          <View className="flex flex-row items-center justify-around mt-8">
                 <ServiceButton 
                   icon={salaryYearly>0? icons.info:icons.add} 
                   title={salaryYearly > 0 ? "View Salary":"Add Salary"} 
@@ -528,7 +528,7 @@ export default function Home() {
                   }} 
                   sideText="View All Expenses"
                 />
-              </View>
+          </View>
               <View className="flex flex-row items-center justify-around mt-8">
                 <ServiceButton 
                   icon={icons.goal} 
@@ -541,8 +541,8 @@ export default function Home() {
                   title="Investment" 
                   sideText="Coming soon"
                 />
-              </View>
-            </View>
+          </View>
+        </View>
 
             {/* Separator line */}
             <View className="border-t border-[#343f52] mx-6 mt-10 mb-0" />
@@ -559,7 +559,7 @@ export default function Home() {
                     {activeTab === "Expenditures" && (
                       <View className="border-b-2 border-[#7b80ff] mt-1" />
                     )}
-                  </TouchableOpacity>
+              </TouchableOpacity>
                   <TouchableOpacity className="py-2" onPress={() => setActiveTab("Insurance")}>
                     <Text className={`font-rubik-medium text-base ${activeTab === "Insurance" ? "text-[#7b80ff]" : "text-[#9aa0a6]"}`}>
                       Insurance
@@ -567,8 +567,8 @@ export default function Home() {
                     {activeTab === "Insurance" && (
                       <View className="border-b-2 border-[#7b80ff] mt-1" />
                     )}
-                  </TouchableOpacity>
-                </View>
+              </TouchableOpacity>
+            </View>
                 
                 {/* Add button - only show when salary is added */}
                 {isSalaryInputComplete && activeTab === "Expenditures" && (
@@ -626,8 +626,8 @@ export default function Home() {
                                 <Text className="text-[#ccc] font-rubik text-xs mt-0.5">
                                   {new Date(expense.date).toLocaleDateString()}
                                 </Text>
-                              </View>
-                            </View>
+          </View>
+        </View>
                             <Text className="text-white font-rubik-bold text-base">₹{expense.amount}</Text>
                           </TouchableOpacity>
                         ))}
@@ -656,8 +656,8 @@ export default function Home() {
                   )
                 ) : renderContent()}
               </View>
-            </View>
-          </ScrollView>
+        </View>
+        </ScrollView>
         )}
       </SafeAreaView>
     )

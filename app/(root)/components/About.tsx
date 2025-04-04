@@ -24,7 +24,7 @@ const About = ({ onClose }: AboutProps) => {
 
       <ScrollView 
         className="flex-1 px-6" 
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
       >
         {/* App Info */}

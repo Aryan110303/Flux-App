@@ -1,0 +1,46 @@
+I need a comprehensive dataset of financial and investment rules or strategies that are commonly used by financial advisors, experts, or financial influencers. These should be numerical rules or formulas that people can apply to their personal finances or investment decisions.
+
+Please generate 30 finance rules/strategies in the following JSON format:
+
+```json
+[
+  {
+    "name": "50-30-20 Rule",
+    "description": "Allocate 50% of income to needs, 30% to wants, and 20% to savings/investments.",
+    "application": "Effective for basic personal financial planning and budgeting.",
+    "examples": [
+      {
+        "scenario": "A person with monthly income of ₹60,000",
+        "calculation": "Needs: ₹30,000 (50%), Wants: ₹18,000 (30%), Savings: ₹12,000 (20%)",
+        "explanation": "This ensures essential expenses are covered while building savings."
+      }
+    ],
+    "suitable_for": ["Beginners", "Budget planning", "Income allocation"],
+    "limitations": "May need adjustment for very high or low income levels, or in high cost-of-living areas."
+  }
+]
+```
+
+For each rule or strategy, please include:
+
+1. A short, descriptive name (preferably including numbers if the rule has them)
+2. A concise description of what the rule entails
+3. Its practical application in personal finance
+4. 1-2 specific examples with calculations in Indian Rupees (₹)
+5. Who the rule is most suitable for (beginners, specific income groups, etc.)
+6. Any limitations or drawbacks of the rule
+
+Please cover a wide range of rules across these categories:
+- Budget allocation rules
+- Vehicle/home purchase affordability rules
+- Investment allocation strategies
+- Retirement planning formulas
+- Savings guidelines
+- Debt management strategies
+- Tax optimization approaches
+- Risk assessment formulas
+- Financial goal planning
+
+All examples should use Indian Rupees (₹) and be relevant to the Indian financial context. Include popular rules from financial experts and YouTube financial influencers when possible.
+
+Remember to make all rules practical, easy to understand, and applicable without requiring advanced financial knowledge. 

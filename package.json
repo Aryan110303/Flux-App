@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@huggingface/inference": "^3.6.2",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-community/blur": "^4.4.1",
     "@react-native-community/datetimepicker": "^8.3.0",
@@ -24,8 +25,10 @@
     "expo": "~52.0.37",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.7",
+    "expo-file-system": "^18.0.12",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
+    "expo-linear-gradient": "~14.0.2",
     "expo-linking": "~7.0.5",
     "expo-router": "~4.0.17",
     "expo-splash-screen": "~0.29.22",

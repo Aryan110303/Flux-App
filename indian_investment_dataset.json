@@ -1,0 +1,22 @@
+[
+    {
+        "question": "What is a SIP and how does it work in India?",
+        "answer": "SIP (Systematic Investment Plan) is a method of investing in mutual funds where you contribute a fixed amount at regular intervals, typically monthly. It allows you to benefit from rupee-cost averaging by purchasing more units when prices are low and fewer when prices are high. Most fund houses in India allow SIPs starting from \u20b9500 per month, and you can set up automatic debits from your bank account. SIPs are popular because they instill investment discipline and help in wealth creation over time through the power of compounding. Disclaimer: This information is for educational purposes only and not financial advice."
+    },
+    {
+        "question": "What is the minimum amount required to invest in PPF?",
+        "answer": "The Public Provident Fund (PPF) requires a minimum annual investment of \u20b9500, and the maximum limit is \u20b91.5 lakh per financial year. PPF investments have a lock-in period of 15 years, with partial withdrawals allowed after the 6th year. The current interest rate is revised quarterly by the Government of India and is tax-free. PPF investments qualify for tax deduction under Section 80C. Disclaimer: This information is for educational purposes only and not financial advice."
+    },
+    {
+        "question": "What are the tax benefits of ELSS mutual funds in India?",
+        "answer": "Equity-Linked Savings Schemes (ELSS) are tax-saving mutual funds that qualify for deductions under Section 80C of the Income Tax Act, with a limit of \u20b91.5 lakh per financial year. ELSS funds have a lock-in period of 3 years, the shortest among tax-saving instruments. Gains above \u20b91 lakh in a financial year are subject to 10% LTCG tax. Since ELSS invests primarily in equities, it offers higher growth potential but comes with market risks. Disclaimer: This information is for educational purposes only and not financial advice."
+    },
+    {
+        "question": "How is LTCG tax calculated on equity investments in India?",
+        "answer": "Long-term capital gains (LTCG) tax on equity investments applies when shares or equity mutual funds are held for more than one year. As per the Income Tax Act, LTCG above \u20b91 lakh in a financial year is taxed at 10% without indexation benefits. For example, if your total capital gain is \u20b91.5 lakh, only \u20b950,000 will be taxed at 10%, resulting in a tax liability of \u20b95,000. Disclaimer: This information is for educational purposes only and not financial advice."
+    },
+    {
+        "question": "What is the difference between a regular mutual fund and a direct mutual fund?",
+        "answer": "A regular mutual fund is purchased through intermediaries like brokers or banks and includes distribution commissions, resulting in a higher expense ratio. In contrast, a direct mutual fund is bought directly from the fund house without intermediaries, leading to lower expense ratios and potentially higher returns over time. Investors comfortable with researching and choosing funds can benefit from direct plans. Disclaimer: This information is for educational purposes only and not financial advice."
+    }
+]

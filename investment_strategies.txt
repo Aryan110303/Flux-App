@@ -1,0 +1,145 @@
+[
+  {
+    "name": "50-30-20 Rule",
+    "description": "Allocate 50% of income to needs, 30% to wants, and 20% to savings/investments.",
+    "application": "Effective for basic personal financial planning and budgeting.",
+    "examples": [
+      {
+        "scenario": "A person with monthly income of ₹60,000",
+        "calculation": "Needs: ₹30,000 (50%), Wants: ₹18,000 (30%), Savings: ₹12,000 (20%)",
+        "explanation": "This ensures essential expenses are covered while building savings."
+      }
+    ],
+    "suitable_for": ["Beginners", "Budget planning", "Income allocation"],
+    "limitations": "May need adjustment for very high or low income levels, or in high cost-of-living areas."
+  },
+  {
+    "name": "Emergency Fund Rule",
+    "description": "Save at least 6 months' worth of living expenses for emergencies.",
+    "application": "Provides financial security in case of job loss or unforeseen expenses.",
+    "examples": [
+      {
+        "scenario": "Monthly expenses of ₹40,000",
+        "calculation": "Emergency fund: ₹40,000 x 6 = ₹2,40,000",
+        "explanation": "This amount can cover 6 months of expenses without income."
+      }
+    ],
+    "suitable_for": ["Everyone", "Risk-averse individuals"],
+    "limitations": "Requires time to build; funds are idle and may not earn high returns."
+  },
+  {
+    "name": "100 Minus Age Rule",
+    "description": "Allocate '100 minus your age' percentage of your portfolio to equities.",
+    "application": "Helps determine appropriate equity exposure based on age.",
+    "examples": [
+      {
+        "scenario": "Investor aged 30",
+        "calculation": "Equity allocation: 100 - 30 = 70%",
+        "explanation": "70% in equities and 30% in debt aligns with risk tolerance."
+      }
+    ],
+    "suitable_for": ["Retirement planning", "Age-based asset allocation"],
+    "limitations": "May not suit all risk profiles; consider individual circumstances."
+  },
+  {
+    "name": "Rule of 72",
+    "description": "Estimate years to double investment by dividing 72 by annual return rate.",
+    "application": "Quickly assess the impact of different interest rates on investments.",
+    "examples": [
+      {
+        "scenario": "Investment with 8% annual return",
+        "calculation": "72 / 8 = 9 years",
+        "explanation": "It will take approximately 9 years to double the investment."
+      }
+    ],
+    "suitable_for": ["Investors comparing investment options"],
+    "limitations": "Approximate; assumes constant return rate."
+  },
+  {
+    "name": "4% Withdrawal Rule",
+    "description": "Withdraw 4% of retirement savings annually to ensure funds last 30 years.",
+    "application": "Guides sustainable withdrawal rates during retirement.",
+    "examples": [
+      {
+        "scenario": "Retirement corpus of ₹1 crore",
+        "calculation": "Annual withdrawal: ₹1,00,00,000 x 4% = ₹4,00,000",
+        "explanation": "Can withdraw ₹4 lakh annually for 30 years."
+      }
+    ],
+    "suitable_for": ["Retirees planning withdrawals"],
+    "limitations": "Based on historical data; may not suit all market conditions."
+  },
+  {
+    "name": "Debt-to-Income Ratio",
+    "description": "Keep total monthly debt payments below 40% of gross monthly income.",
+    "application": "Assesses ability to manage debt responsibly.",
+    "examples": [
+      {
+        "scenario": "Gross monthly income of ₹80,000",
+        "calculation": "Maximum debt payments: ₹80,000 x 40% = ₹32,000",
+        "explanation": "Total debt payments should not exceed ₹32,000."
+      }
+    ],
+    "suitable_for": ["Individuals considering loans"],
+    "limitations": "Does not account for individual expenses and lifestyle."
+  },
+  {
+    "name": "House Affordability Rule",
+    "description": "Purchase price of a house should not exceed 2.5 to 3 times annual income.",
+    "application": "Ensures home purchase is within financial means.",
+    "examples": [
+      {
+        "scenario": "Annual income of ₹12 lakh",
+        "calculation": "Affordable house price: ₹12,00,000 x 3 = ₹36,00,000",
+        "explanation": "Should consider houses priced up to ₹36 lakh."
+      }
+    ],
+    "suitable_for": ["First-time homebuyers"],
+    "limitations": "May vary based on location and personal financial situation."
+  },
+  {
+    "name": "20/4/10 Rule for Car Buying",
+    "description": "Make a 20% down payment, finance for no more than 4 years, and keep total vehicle expenses below 10% of gross income.",
+    "application": "Promotes responsible car financing.",
+    "examples": [
+      {
+        "scenario": "Car price of ₹10 lakh, annual income of ₹15 lakh",
+        "calculation": "Down payment: ₹2 lakh; Loan term: 4 years; Annual vehicle expenses: ≤ ₹1.5 lakh",
+        "explanation": "Aligns car purchase with financial capacity."
+      }
+    ],
+    "suitable_for": ["Individuals planning vehicle purchase"],
+    "limitations": "May not apply to all vehicle types or financial situations."
+  },
+  {
+    "name": "Save 15% of Income for Retirement",
+    "description": "Allocate at least 15% of gross income towards retirement savings.",
+    "application": "Builds a substantial retirement corpus over time.",
+    "examples": [
+      {
+        "scenario": "Monthly income of ₹1,00,000",
+        "calculation": "Retirement savings: ₹1,00,000 x 15% = ₹15,000",
+        "explanation": "Consistent saving leads to significant corpus."
+      }
+    ],
+    "suitable_for": ["Young professionals", "Retirement planners"],
+    "limitations": "May need adjustment based on retirement goals and age."
+  },
+  {
+    "name": "3X Monthly Income for Life Insurance",
+    "description": "Life insurance coverage should be at least 3 times annual income.",
+    "application": "Provides financial protection for dependents.",
+    "examples": [
+      {
+        "scenario": "Annual income of ₹10 lakh",
+        "calculation": "Minimum coverage: ₹10,00,000 x 3 = ₹30,00,000",
+        "explanation": "Ensures family is financially secure."
+      }
+    ],
+    "suitable_for": ["Individuals with dependents"],
+    "limitations": "May not account for all future financial needs."
+  },
+  {
+    "name":
+::contentReference[oaicite:2]{index=2}
+  }

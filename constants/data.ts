@@ -72,25 +72,25 @@ export const settings = [
     id: 3,
     title: 'Download Data',
     icon: icons.download,
-    route: '/download',
+    route: 'download-data',
   },
   {
     id: 4,
     title: 'Calendar',
     icon: icons.calendar,
-    route: '/calendar',
+    route: 'calendar',
   },
   {
     id: 5,
     title: 'Invite Friends',
     icon: icons.people,
-    route: '/invite',
+    route: 'invite-friends',
   },
   {
     id: 6,
     title: 'About',
     icon: icons.info,
-    route: '/about',
+    route: 'about',
   },
 ];
 
