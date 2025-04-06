@@ -1191,6 +1191,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.main,
     display: 'flex',
     flexDirection: 'column',
+    marginTop: 15,
   },
   header: {
     backgroundColor: COLORS.main,

@@ -81,10 +81,15 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
       Alert.alert("Invalid Salary", "Please enter a valid salary amount.");
       return;
     }
-    console.log("Salary saved:", salaryNum);
+    console.log("Annual Salary saved:", salaryNum);
+    // First set the salary in context
     setSalaryYearly(salaryNum);
+    
+    // Call onSave to trigger the next step (showing monthly modal)
+    console.log("Calling onSave to trigger transition to monthly modal");
     onSave();
-    onClose();
+    
+    // No need to call onClose here as it will be handled by the parent component
   }
 
   return (

@@ -7,6 +7,7 @@ type Expense = {
   id: number;
   title: string;
   amount: string;
+  type: 'expense' | 'income'; // 'expense' for spending, 'income' for additional money received
 };
 
 type ExpenseContextType = {
@@ -48,8 +49,14 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({
         
         const storedExpenses = await AsyncStorage.getItem(STORAGE_KEY);
         if (storedExpenses) {
-          setExpenses(JSON.parse(storedExpenses));
-          console.log('Loaded expenses from storage:', JSON.parse(storedExpenses));
+          // Handle migration for existing expenses that don't have a type field
+          const parsedExpenses = JSON.parse(storedExpenses);
+          const migratedExpenses = parsedExpenses.map((exp: any) => ({
+            ...exp,
+            type: exp.type || 'expense' // Set default type for existing expenses
+          }));
+          setExpenses(migratedExpenses);
+          console.log('Loaded expenses from storage:', migratedExpenses);
         }
       } catch (error) {
         console.error('Failed to load expenses from storage:', error);

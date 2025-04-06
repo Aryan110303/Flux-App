@@ -17,7 +17,21 @@ const Payments = ({ onClose }: PaymentsProps) => {
   const [recurringDay, setRecurringDay] = useState('1');
 
   // Calculate total expenses
-  const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  let totalExpenses = 0;
+  let totalIncome = 0;
+  
+  // Calculate expenses and income separately
+  expenses.forEach(expense => {
+    const amount = parseFloat(expense.amount);
+    if (expense.type === 'income') {
+      totalIncome += amount;
+    } else {
+      totalExpenses += amount;
+    }
+  });
+
+  // Net expenses (what's actually spent)
+  const netExpenses = totalExpenses - totalIncome;
 
   // Group expenses by month
   const expensesByMonth = expenses.reduce((groups, expense) => {
@@ -106,11 +120,11 @@ const Payments = ({ onClose }: PaymentsProps) => {
             {/* Total Expenses Card */}
             <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
               <Text className="text-[#9aa0a6] font-rubik text-base mb-2">Total Expenses</Text>
-              <Text className="text-white font-rubik-bold text-3xl mb-4">₹{totalExpenses.toLocaleString()}</Text>
+              <Text className="text-white font-rubik-bold text-3xl mb-4">₹{netExpenses.toLocaleString()}</Text>
               
               <View className="flex-row justify-between items-center">
                 <Text className="text-[#9aa0a6] font-rubik">This Month</Text>
-                <Text className="text-white font-rubik-medium">₹{totalExpenses.toLocaleString()}</Text>
+                <Text className="text-white font-rubik-medium">₹{netExpenses.toLocaleString()}</Text>
               </View>
             </View>
 
@@ -141,7 +155,7 @@ const Payments = ({ onClose }: PaymentsProps) => {
             {/* Total Expenses Card */}
             <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
               <Text className="text-[#9aa0a6] font-rubik text-base mb-2">Total Expenses</Text>
-              <Text className="text-white font-rubik-bold text-3xl mb-4">₹{totalExpenses.toLocaleString()}</Text>
+              <Text className="text-white font-rubik-bold text-3xl mb-4">₹{netExpenses.toLocaleString()}</Text>
             </View>
 
             {/* Payment History */}

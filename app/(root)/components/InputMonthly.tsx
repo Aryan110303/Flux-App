@@ -29,7 +29,16 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
 
   useEffect(() => {
     if (isVisible) {
+      // When the monthly modal becomes visible, reset the view to keypad
+      setCurrentView('keypad');
+      console.log("Monthly modal is now visible, view set to keypad");
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (isVisible) {
       // Hide the tab bar when the modal is visible
+      console.log("Monthly modal becoming visible");
       // @ts-ignore
       navigation.getParent()?.setOptions({
         tabBarStyle: { 
@@ -44,6 +53,7 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
         useNativeDriver: true,
       }).start();
     } else {
+      console.log("Monthly modal becoming hidden");
       // Show the tab bar when the modal is hidden
       // @ts-ignore
       navigation.getParent()?.setOptions({
@@ -97,13 +107,16 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
     }
     
     if (currentView === 'keypad') {
+      console.log("Moving from keypad to recurrence view");
       setCurrentView('recurrence');
     } else {
-      console.log("Salary saved:", salaryMonthly);
+      console.log("Monthly Salary saved:", salaryMonthly);
       console.log("Is recurring:", isRecurring);
       console.log("Recurrence frequency:", recurrenceFrequency);
       setIsSalaryInputComplete(true);
+      console.log("Salary input marked as complete");
       onComplete();
+      console.log("onComplete callback executed, closing monthly modal");
       onClose();
     }
   };

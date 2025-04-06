@@ -6,6 +6,8 @@ interface ExpenseProps {
     isModalVisible: boolean;
     onCloseModal: () => void;
     onOpenModal: () => void;
+    onClose: () => void;
+    onEdit: (expense: { id: number; title: string; amount: string; date?: string | number | Date; type?: 'expense' | 'income' }) => void;
 }
 
 const Expense = ({ isModalVisible, onCloseModal, onOpenModal }: ExpenseProps) => {

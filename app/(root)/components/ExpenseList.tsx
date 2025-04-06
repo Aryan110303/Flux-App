@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native'
-import React from 'react'
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, FlatList } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import icons from '@/constants/icons';
 import { useExpenses } from '../context/ExpenseContext';
 
@@ -21,6 +21,7 @@ const ExpenseList = ({
     limit
 }: ExpenseListProps) => {
     const { expenses, deleteExpense } = useExpenses();
+    const [recentExpenses, setRecentExpenses] = useState<typeof expenses>([]);
 
     // Add debug logging to understand what expenses are available
     console.log('ExpenseList rendering with:', {
@@ -33,6 +34,16 @@ const ExpenseList = ({
     if (expenses.length > 0) {
         console.log('Sample expense:', expenses[0]);
     }
+
+    useEffect(() => {
+        // Get the most recent 3 expenses
+        const sorted = [...expenses].sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            return dateB - dateA;
+        });
+        setRecentExpenses(sorted.slice(0, 3));
+    }, [expenses]);
 
     // Get the latest expenses first and limit if specified
     const sortedExpenses = [...expenses].sort((a, b) => {
@@ -59,15 +70,24 @@ const ExpenseList = ({
         if (!groups[monthKey]) {
             groups[monthKey] = {
                 expenses: [],
-                totalSpend: 0
+                totalSpend: 0,
+                totalIncome: 0,
+                netAmount: 0
             };
         }
         
+        if (expense.type === 'income') {
+            groups[monthKey].totalIncome += parseFloat(expense.amount) || 0;
+        } else {
+            groups[monthKey].totalSpend += parseFloat(expense.amount) || 0;
+        }
+        
+        // Calculate net amount (expenses - income)
+        groups[monthKey].netAmount = groups[monthKey].totalSpend - groups[monthKey].totalIncome;
         groups[monthKey].expenses.push(expense);
-        groups[monthKey].totalSpend += parseFloat(expense.amount) || 0;
         
         return groups;
-    }, {} as { [key: string]: { expenses: any[], totalSpend: number } });
+    }, {} as { [key: string]: { expenses: any[], totalSpend: number, totalIncome: number, netAmount: number } });
     
     const displayGroups = limit 
         ? Object.entries(groupedExpenses).slice(0, 1) 
@@ -96,6 +116,34 @@ const ExpenseList = ({
         }
     };
 
+    const formatAmount = (amount: string): string => {
+        // Convert to number, format with commas, then convert back to string
+        return parseFloat(amount).toLocaleString('en-IN', {
+            maximumFractionDigits: 2,
+            minimumFractionDigits: 0
+        });
+    };
+
+    const renderExpenseItem = ({ item }: { item: (typeof expenses)[0] }) => (
+        <TouchableOpacity 
+            onPress={() => handleEdit(item)}
+            style={styles.expenseItem}
+        >
+            <View style={styles.expenseDetails}>
+                <Text style={styles.expenseTitle}>{item.title}</Text>
+                <Text style={styles.expenseDate}>{formatDate(item.date)}</Text>
+            </View>
+            <Text 
+                style={[
+                    styles.expenseAmount, 
+                    item.type === 'income' ? styles.incomeAmount : null
+                ]}
+            >
+                {item.type === 'income' ? '+' : '-'}₹{formatAmount(item.amount)}
+            </Text>
+        </TouchableOpacity>
+    );
+
     return (
         <View className="flex-1 bg-[#1f2630]">
             {/* Header */}
@@ -103,7 +151,7 @@ const ExpenseList = ({
                 <View className="flex-row items-center justify-between px-6 py-4 mt-8">
                     <TouchableOpacity onPress={onCloseModal} className="flex-row items-center">
                         <Image source={icons.backArrow} className="size-6 mr-4" tintColor="#7b80ff" />
-                        <Text className="text-primary font-rubik-medium text-lg">All Expenses</Text>
+                        <Text className="text-primary font-rubik-medium text-lg">All Transactions</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => onOpenModal()}>
                         <Image source={icons.add} className="size-6" tintColor="#7b80ff" />
@@ -116,49 +164,50 @@ const ExpenseList = ({
                 <View className={`pb-20 ${!showHeader && useFullLayout ? 'px-6' : ''}`}>
                     {/* For "All Expenses" screen - show grouped by month */}
                     {showHeader && displayGroups.length > 0 ? (
-                        displayGroups.map(([monthKey, { expenses, totalSpend }]) => (
+                        displayGroups.map(([monthKey, { expenses, totalSpend, totalIncome, netAmount }]) => (
                             <View key={monthKey}>
                                 {/* Month Header with Total Spend */}
                                 <View className="flex-row justify-between items-center px-6 py-4">
                                     <Text className="text-[#ccc] font-rubik-medium text-lg">{monthKey}</Text>
-                                    <Text className="text-[#7b80ff] font-rubik-bold text-lg">₹ {totalSpend.toFixed(2)}</Text>
+                                    <Text className={`font-rubik-bold text-lg ${netAmount > 0 ? 'text-[#FF5252]' : 'text-[#4CAF50]'}`}>
+                                        ₹ {Math.abs(netAmount).toFixed(2)}
+                                    </Text>
                                 </View>
                                 
                                 {/* Expenses for this month */}
-                                {expenses.map((item) => (
-                                    <View 
-                                        key={item.id} 
-                                        className="bg-[#3E4D67] p-4 rounded-xl mb-4 mx-6"
-                                    >
-                                        <View>
-                                            <View className="flex-row justify-between items-center">
-                                                <Text className="text-white text-lg font-rubik-semibold">{item.title}</Text>
-                                                <Text className="text-white font-rubik-bold text-lg">₹{item.amount}</Text>
+                                <View className="px-6">
+                                    {expenses.map((item) => (
+                                        <View 
+                                            key={item.id}
+                                            style={styles.monthlyExpenseItem}
+                                        >
+                                            <View style={{flex: 1}}>
+                                                <Text style={styles.expenseTitle}>{item.title}</Text>
+                                                <Text style={styles.expenseDate}>{formatDate(item.date)}</Text>
                                             </View>
-                                            <Text className="text-[#ccc] font-rubik text-sm mt-2">{formatDate(item.date)}</Text>
-                                            <View className="flex-row justify-between mt-3">
-                                                <TouchableOpacity 
-                                                    onPress={() => handleEdit(item)}
-                                                    className="bg-[#2A3547] px-3 py-1.5 rounded-full"
+                                            
+                                            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                                                <Text 
+                                                    style={[
+                                                        styles.expenseAmount, 
+                                                        item.type === 'income' ? styles.incomeAmount : styles.expenseAmountRed
+                                                    ]}
                                                 >
-                                                    <View className="flex-row items-center">
-                                                        <Image source={icons.edit} className="size-4 mr-1" tintColor="#7b80ff"/>
-                                                        <Text className="text-[#7b80ff] text-xs font-rubik">Edit</Text>
-                                                    </View>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity 
-                                                    onPress={() => deleteExpense(item.id)}
-                                                    className="bg-[#2A3547] px-3 py-1.5 rounded-full"
-                                                >
-                                                    <View className="flex-row items-center">
-                                                        <Image source={icons.dustbin} className="size-4 mr-1" tintColor="#FF7676"/>
-                                                        <Text className="text-[#FF7676] text-xs font-rubik">Delete</Text>
-                                                    </View>
-                                                </TouchableOpacity>
+                                                    {item.type === 'income' ? '+' : '-'}₹{formatAmount(item.amount)}
+                                                </Text>
+                                                
+                                                <View style={{flexDirection: 'row', marginLeft: 12}}>
+                                                    <TouchableOpacity onPress={() => handleEdit(item)} style={{marginRight: 12}}>
+                                                        <Image source={icons.edit} style={{width: 20, height: 20}} tintColor="#7b80ff" />
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity onPress={() => deleteExpense(item.id)}>
+                                                        <Image source={icons.dustbin} style={{width: 20, height: 20}} tintColor="#FF5252" />
+                                                    </TouchableOpacity>
+                                                </View>
                                             </View>
                                         </View>
-                                    </View>
-                                ))}
+                                    ))}
+                                </View>
                             </View>
                         ))
                     ) : (
@@ -228,5 +277,54 @@ const ExpenseList = ({
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    expensesList: {
+        paddingHorizontal: 24,
+    },
+    expenseItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#343f52',
+    },
+    expenseDetails: {
+        flex: 1,
+    },
+    expenseTitle: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '500',
+        fontFamily: 'Rubik-Medium',
+    },
+    expenseDate: {
+        color: '#9aa0a6',
+        fontSize: 12,
+        marginTop: 4,
+        fontFamily: 'Rubik',
+    },
+    expenseAmount: {
+        color: '#ff6b6b',
+        fontSize: 16,
+        fontWeight: '600',
+        fontFamily: 'Rubik-Medium',
+    },
+    incomeAmount: {
+        color: '#4CAF50', // Green for income
+    },
+    monthlyExpenseItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#343f52',
+    },
+    expenseAmountRed: {
+        color: '#FF5252', // Red for expenses
+    }
+});
 
 export default ExpenseList;

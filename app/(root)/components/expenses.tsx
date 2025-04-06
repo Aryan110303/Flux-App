@@ -55,7 +55,13 @@ export default function Expenses() {
                     {new Date(expense.date).toLocaleDateString()} • {new Date(expense.date).toLocaleTimeString()}
                   </Text>
                 </View>
-                <Text className="text-primary font-rubik-bold text-lg">₹{expense.amount}</Text>
+                <Text 
+                  className={expense.type === 'income' 
+                    ? "text-[#4CAF50] font-rubik-bold text-lg" 
+                    : "text-[#FF5252] font-rubik-bold text-lg"}
+                >
+                  {expense.type === 'income' ? '+' : '-'}₹{expense.amount}
+                </Text>
               </View>
             </TouchableOpacity>
           ))

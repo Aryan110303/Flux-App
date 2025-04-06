@@ -9,6 +9,8 @@ export interface UserContextType {
   setSalaryMonthly: (salary: string | ((prev: string) => string)) => void;
   savings: number;
   setSavings: (savings: number) => void;
+  existingSavings: number;
+  setExistingSavings: (amount: number) => void;
   goal: string | null;
   setGoal: (goal: string | null) => void;
   goalAmount: number;
@@ -19,6 +21,9 @@ export interface UserContextType {
   setIsRecurring: (isRecurring: boolean) => void;
   recurrenceFrequency: RecurrenceType;
   setRecurrenceFrequency: (frequency: RecurrenceType) => void;
+  lastSalaryReceived: Date | null;
+  setLastSalaryReceived: (date: Date | null) => void;
+  addSalaryToSavings: () => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -34,10 +39,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [salaryMonthly, setSalaryMonthly] = useState("0");
   const [goal, setGoal] = useState<string | null>(null);
   const [savings, setSavings] = useState(0);
+  const [existingSavings, setExistingSavings] = useState(0);
   const [goalAmount, setGoalAmount] = useState(0);
   const [isSalaryInputComplete, setIsSalaryInputComplete] = useState(false);
   const [isRecurring, setIsRecurring] = useState(true); // Default to true as most incomes are recurring
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceType>('monthly'); // Default to monthly
+  const [lastSalaryReceived, setLastSalaryReceived] = useState<Date | null>(null);
+
+  // Function to add monthly salary to savings
+  const addSalaryToSavings = () => {
+    if (salaryMonthly) {
+      const monthlySalaryAmount = parseFloat(salaryMonthly.replace(/,/g, ''));
+      if (!isNaN(monthlySalaryAmount)) {
+        setSavings(prevSavings => prevSavings + monthlySalaryAmount);
+        setLastSalaryReceived(new Date());
+      }
+    }
+  };
 
   return (
     <UserContext.Provider 
@@ -48,6 +66,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setGoal, 
         savings, 
         setSavings, 
+        existingSavings,
+        setExistingSavings,
         goalAmount, 
         setGoalAmount, 
         salaryMonthly, 
@@ -57,7 +77,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         isRecurring,
         setIsRecurring,
         recurrenceFrequency,
-        setRecurrenceFrequency
+        setRecurrenceFrequency,
+        lastSalaryReceived,
+        setLastSalaryReceived,
+        addSalaryToSavings
       }}
     >
       {children}

@@ -28,6 +28,7 @@ import {
       title: string;
       amount: string;
       date?: string;
+      type?: 'expense' | 'income';
     };
   }
   
@@ -36,9 +37,12 @@ import {
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const { addExpense, updateExpense } = useExpenses();
     const { showToast } = useToast();
-    const { isSalaryInputComplete } = useUserContext();
+    const { isSalaryInputComplete, setSavings, savings } = useUserContext();
     const [title, setTitle] = useState(expenseToEdit?.title || '');
     const [amount, setAmount] = useState(expenseToEdit?.amount || '');
+    const [transactionType, setTransactionType] = useState<'expense' | 'income'>(
+      expenseToEdit?.type || 'expense'
+    );
 
     // Close modal if salary is not added yet
     useEffect(() => {
@@ -54,9 +58,11 @@ import {
         if (expenseToEdit) {
           setTitle(expenseToEdit.title);
           setAmount(expenseToEdit.amount);
+          setTransactionType(expenseToEdit.type || 'expense');
         } else {
           setTitle("");
           setAmount("");
+          setTransactionType('expense');
         }
       }
     }, [isVisible, expenseToEdit]);
@@ -105,21 +111,64 @@ import {
           title: title.trim(),
           amount: amount.trim().replace(/,/g, ''),
           date: expenseToEdit.date || new Date().toISOString(),
+          type: transactionType
         };
         updateExpense(expenseToEdit.id, updatedExpense);
-        showToast('Expenditure updated successfully!', 'success');
+        
+        // If this is an income entry, add to savings
+        if (transactionType === 'income') {
+          // We'll let the SavingsCalculator handle this now
+          showToast('Income added!', 'success');
+        } else {
+          showToast('Expenditure updated successfully!', 'success');
+        }
       } else {
         const newExpense = {
           id: Date.now(),
           title: title.trim(),
           amount: amount.trim().replace(/,/g, ''),
           date: new Date().toISOString(),
+          type: transactionType
         };
         addExpense(newExpense);
-        showToast('Expenditure saved successfully!', 'success');
+        
+        // If this is an income entry, add to savings
+        if (transactionType === 'income') {
+          // We'll let the SavingsCalculator handle this now
+          showToast('Income added!', 'success');
+        } else {
+          showToast('Expenditure saved successfully!', 'success');
+        }
       }
       onClose();
     };
+    
+    const renderTabSelector = () => (
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[
+            styles.tab, 
+            transactionType === 'expense' ? styles.activeTab : null
+          ]}
+          onPress={() => setTransactionType('expense')}
+        >
+          <Text style={transactionType === 'expense' ? styles.activeTabText : styles.tabText}>
+            Expense
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[
+            styles.tab, 
+            transactionType === 'income' ? styles.incomeActiveTab : null
+          ]}
+          onPress={() => setTransactionType('income')}
+        >
+          <Text style={transactionType === 'income' ? styles.activeTabText : styles.tabText}>
+            Income
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
   
     return (
       <Modal transparent visible={isVisible} animationType="fade">
@@ -145,42 +194,51 @@ import {
                 </TouchableOpacity>
               </View>
   
-              <View style={styles.mainBox}>
-                <Text className="text-primary font-rubik-semibold text-xl">
-                  {expenseToEdit ? "Edit Expenditure" : "Add an Expenditure"}
-                </Text>
-                <Text className="text-primary font-rubik ">
-                  {expenseToEdit 
-                    ? "Update the details of your expense to track your budget efficiently."
-                    : "Enter details about your recent expense to track your budget efficiently."}
-                </Text>
-                <Text className="text-primary text-xl font-rubik mt-12">Title</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="E.g Groceries"
-                  placeholderTextColor="#a8a8a8"
-                  value={title}
-                  onChangeText={setTitle}
-                  blurOnSubmit={true}
-                  returnKeyType="done"
-                />
+              <Text className="text-primary font-rubik-semibold text-xl mb-2">
+                {expenseToEdit ? `Edit ${transactionType === 'income' ? 'Income' : 'Expenditure'}` : `Add ${transactionType === 'income' ? 'Income' : 'an Expenditure'}`}
+              </Text>
+              
+              {renderTabSelector()}
+              
+              <Text className="text-primary font-rubik mt-4">
+                {transactionType === 'income' 
+                  ? "Enter details about money you've received to add to your savings."
+                  : "Enter details about your recent expense to track your budget efficiently."}
+              </Text>
+              
+              <Text className="text-primary text-xl font-rubik mt-8">
+                {transactionType === 'income' ? 'Source' : 'Title'}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder={transactionType === 'income' ? "E.g Bonus, Gift, Side job" : "E.g Groceries"}
+                placeholderTextColor="#a8a8a8"
+                value={title}
+                onChangeText={setTitle}
+                blurOnSubmit={true}
+                returnKeyType="done"
+              />
   
-                <Text className="text-primary text-xl font-rubik mt-6">Amount</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Amount"
-                  placeholderTextColor="#a8a8a8"
-                  value={amount}
-                  keyboardType="numeric"
-                  onChangeText={setAmount}
-                  blurOnSubmit={true}
-                  returnKeyType="done"
-                />
+              <Text className="text-primary text-xl font-rubik mt-6">Amount</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Amount"
+                placeholderTextColor="#a8a8a8"
+                value={amount}
+                keyboardType="numeric"
+                onChangeText={setAmount}
+                blurOnSubmit={true}
+                returnKeyType="done"
+              />
   
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                  <Text className="text-primary">{expenseToEdit ? "Update" : "Save"}</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[styles.saveButton, transactionType === 'income' ? styles.incomeSaveButton : null]}
+                onPress={handleSave}
+              >
+                <Text style={styles.saveButtonText}>
+                  {expenseToEdit ? 'Update' : 'Save'} {transactionType === 'income' ? 'Income' : 'Expense'}
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
           </KeyboardAvoidingView>
         </Animated.View>
@@ -188,65 +246,92 @@ import {
     );
   };
   
-  export default ExpenseModal;
-  
   const styles = StyleSheet.create({
     overlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
     },
     modal: {
       position: "absolute",
+      bottom: 0,
       left: 0,
       right: 0,
-      bottom: 0,
-      height: "60%",
-      width: "100%",
+      padding: 20,
       backgroundColor: "#1f2630",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    scrollContainer: {
-      flexGrow: 1,
-      alignItems: "center",
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: "90%",
     },
     header: {
-      marginTop: 24,
       flexDirection: "row",
-      alignContent: "center",
-      alignItems: "center",
       justifyContent: "space-between",
-      width: "100%",
-      paddingHorizontal: 25,
+      alignItems: "center",
+      marginBottom: 20,
     },
-    mainBox: {
-        marginTop: 25,
-        width: "100%",
-        paddingHorizontal: 25,
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: "#fff",
+      marginBottom: 20,
+    },
+    scrollContainer: {
+      paddingBottom: 50,
     },
     input: {
-      height: 50,
-      width: 300,
-      borderColor: "#7b80ff",
-      backgroundColor: 'rgba(123, 128, 255, 0.1)',  // Light gradient effect
-      borderWidth: 2,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      marginTop: 10,
-      fontSize: 16,
-      color: "#e0cfd9",
-    //   backgroundColor: "#1f2630",
+      borderWidth: 1,
+      borderColor: "#343f52",
+      borderRadius: 8,
+      padding: 12,
+      marginTop: 8,
+      marginBottom: 20,
+      color: "#fff",
+      backgroundColor: "#2A3341",
     },
     saveButton: {
       backgroundColor: "#7b80ff",
-      padding: 15,
+      padding: 16,
       borderRadius: 8,
-      marginTop: 40,
       alignItems: "center",
+      marginTop: 20,
     },
+    saveButtonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      marginTop: 8,
+      marginBottom: 16,
+      borderRadius: 8,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: '#343f52',
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      backgroundColor: '#2A3341',
+    },
+    activeTab: {
+      backgroundColor: '#7b80ff',
+    },
+    incomeActiveTab: {
+      backgroundColor: '#4CAF50',
+    },
+    tabText: {
+      color: '#fff',
+      fontWeight: '500',
+    },
+    activeTabText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    incomeSaveButton: {
+      backgroundColor: '#4CAF50',
+    }
   });
+  
+  export default ExpenseModal;
   

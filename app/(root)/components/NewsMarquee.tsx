@@ -6,11 +6,33 @@ interface NewsItem {
     url: string;
 }
 
+// Fallback news items in case the API doesn't return enough
+const FALLBACK_NEWS = [
+    { title: "Markets show strong performance as global economy stabilizes", url: "#" },
+    { title: "RBI announces new policy measures to boost economic growth", url: "#" },
+    { title: "Tech stocks lead market rally amid positive earnings reports", url: "#" },
+    { title: "Oil prices stabilize as global production meets demand", url: "#" },
+    { title: "Gold sees uptick as investors seek safe-haven assets", url: "#" },
+    { title: "Banking sector shows resilience amid economic challenges", url: "#" },
+    { title: "Rupee strengthens against dollar on positive economic outlook", url: "#" },
+    { title: "Government announces new fiscal measures to support small businesses", url: "#" },
+    { title: "Mutual funds see record inflows as retail investment grows", url: "#" },
+    { title: "Real estate sector recovers with increasing demand for housing", url: "#" },
+    { title: "Electric vehicle stocks surge on government incentives", url: "#" },
+    { title: "Pharma sector outperforms broader market on strong earnings", url: "#" },
+    { title: "Renewable energy investments hit all-time high in India", url: "#" },
+    { title: "Inflation data shows signs of cooling as commodity prices ease", url: "#" },
+    { title: "India's manufacturing PMI hits 15-month high on strong demand", url: "#" }
+];
+
+const MINIMUM_NEWS_COUNT = 15; // Minimum number of news items to display
+
 const NewsMarquee = () => {
     const [news, setNews] = useState<NewsItem[]>([]);
     const scrollX = useRef(new Animated.Value(0)).current;
     const [contentWidth, setContentWidth] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
+    const screenWidth = Dimensions.get('window').width;
 
     useEffect(() => {
         fetchNews();
@@ -24,41 +46,56 @@ const NewsMarquee = () => {
             );
             const data = await response.json();
             
-            if (data.feed) {
-                const formattedNews = data.feed.map((item: any) => ({
+            let newsItems: NewsItem[] = [];
+            
+            if (data.feed && data.feed.length > 0) {
+                newsItems = data.feed.map((item: any) => ({
                     title: item.title,
                     url: item.url
                 }));
-                setNews(formattedNews);
+                
+                // If we have less than the minimum, supplement with fallback news
+                if (newsItems.length < MINIMUM_NEWS_COUNT) {
+                    const neededItems = MINIMUM_NEWS_COUNT - newsItems.length;
+                    newsItems = [...newsItems, ...FALLBACK_NEWS.slice(0, neededItems)];
+                }
+            } else {
+                // If API fails, use fallback news
+                newsItems = [...FALLBACK_NEWS];
             }
+            
+            // Duplicate the news items to create a seamless loop
+            setNews([...newsItems, ...newsItems]);
         } catch (error) {
             console.error('Error fetching news:', error);
+            setNews([...FALLBACK_NEWS, ...FALLBACK_NEWS]); // Duplicate for seamless loop
         }
     };
 
     useEffect(() => {
         if (news.length > 0 && contentWidth > 0 && !isAnimating) {
             setIsAnimating(true);
+            
+            // Reset position to start
             scrollX.setValue(0);
             
-            const animation = Animated.loop(
-                Animated.sequence([
-                    Animated.timing(scrollX, {
-                        toValue: -contentWidth,
-                        duration: contentWidth * 30,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(scrollX, {
-                        toValue: 0,
-                        duration: 0,
-                        useNativeDriver: true,
-                    })
-                ])
-            );
-            
-            animation.start();
+            // Create infinite horizontal scrolling animation
+            // We only animate to -contentWidth/2 (half the content) since we duplicated the news array
+            Animated.timing(scrollX, {
+                toValue: -contentWidth / 2,
+                duration: contentWidth * 20, // Slightly faster for better experience
+                useNativeDriver: true,
+                isInteraction: false,
+            }).start(({ finished }) => {
+                if (finished) {
+                    // When animation completes, immediately reset to start without animation
+                    scrollX.setValue(0);
+                    // Restart the animation for continuous effect
+                    setIsAnimating(false);
+                }
+            });
         }
-    }, [news, contentWidth]);
+    }, [news, contentWidth, isAnimating]);
 
     if (!news.length) return null;
 

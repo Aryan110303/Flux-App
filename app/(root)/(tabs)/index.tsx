@@ -18,6 +18,7 @@ import NewsMarquee from "../components/NewsMarquee";
 import { router, useNavigation } from "expo-router";
 import { useGlobalContext } from "@/lib/global-provider";
 import Debts from "../components/debts";
+import MySavings from "../components/MySavings";
 
 interface ServiceProps{
   icon: ImageSourcePropType,
@@ -119,34 +120,45 @@ const currencies = [
 
 const SavingsCalculator = () => {
   const { expenses } = useExpenses();
-  const { salaryMonthly, setSavings, isSalaryInputComplete } = useUserContext();
+  const { salaryMonthly, setSavings, existingSavings, isSalaryInputComplete } = useUserContext();
 
   useEffect(() => {
     console.log('Savings calculation triggered (inside calculator)');
     console.log('Salary Monthly:', salaryMonthly);
     console.log('Expenses:', expenses);
     console.log('Is salary complete:', isSalaryInputComplete);
+    console.log('Existing Savings:', existingSavings);
 
     if (isSalaryInputComplete && expenses && salaryMonthly) {
-      // Calculate total monthly expenditures
-      const totalMonthlyExpenses = expenses.reduce((sum, expense) => {
+      // Initialize values for expenses and income
+      let totalExpenses = 0;
+      let totalIncome = 0;
+
+      // Calculate separately for expenses and income
+      expenses.forEach(expense => {
         const amount = parseFloat(expense.amount.replace(/,/g, '')); // Remove commas if present
-        return sum + amount;
-      }, 0);
+        if (expense.type === 'income') {
+          totalIncome += amount;
+        } else {
+          totalExpenses += amount;
+        }
+      });
 
       // Convert salaryMonthly to number
       const monthlySalary = parseFloat(salaryMonthly.toString().replace(/,/g, ''));
       
       console.log('Monthly Salary (number):', monthlySalary);
-      console.log('Total Monthly Expenses:', totalMonthlyExpenses);
+      console.log('Total Expenses:', totalExpenses);
+      console.log('Total Additional Income:', totalIncome);
       
-      // Calculate savings
-      const monthlySavings = monthlySalary - totalMonthlyExpenses;
+      // Calculate savings: Salary + additional income - expenses
+      // Note: This is just monthly savings, not touching existing savings
+      const monthlySavings = monthlySalary + totalIncome - totalExpenses;
       console.log('Calculating new savings:', monthlySavings);
       
       setSavings(Math.max(0, monthlySavings));
     }
-  }, [expenses, salaryMonthly, isSalaryInputComplete, setSavings]);
+  }, [expenses, salaryMonthly, isSalaryInputComplete, setSavings, existingSavings]);
 
   return null;
 };
@@ -158,6 +170,7 @@ export default function Home() {
   const [changeAmount, setChangeAmount] = useState("0");
   const [showDebts, setShowDebts] = useState(false);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
+  const [showSavings, setShowSavings] = useState(false);
 
   const [isModalVisibleYearly, setIsModalVisibleYearly] = useState(false)
   const [isModalVisibleMonthly, setIsModalVisibleMonthly] = useState(false)
@@ -191,14 +204,18 @@ export default function Home() {
   } | undefined>(undefined);
 
   const handleAdd = () => {
+    // Always show annual input first
+    console.log("handleAdd called - opening annual salary input");
     setIsModalVisibleYearly(true);
   }
 
   const handleCloseAnnualModal = () => {
+    console.log("Manually closing annual modal");
     setIsModalVisibleYearly(false);
   }
 
   const handleCloseMonthlyModal = () => {
+    console.log("Closing monthly modal");
     setIsModalVisibleMonthly(false);
   }
 
@@ -207,10 +224,20 @@ export default function Home() {
     setExpenseToEdit(undefined);
   };
 
-  const handleOpenExpenseModal = (expense?: { id: number; title: string; amount: string }) => {
+  const handleOpenExpenseModal = (expense?: { id: number; title: string; amount: string; date?: string | number | Date; type?: 'expense' | 'income' }) => {
     setExpenseToEdit(expense);
     setIsExpModalVisible(true);
   };
+
+  // Function to handle the sequence of showing annual then monthly modals
+  const handleSalaryInputSequence = () => {
+    // First close the annual modal
+    setIsModalVisibleYearly(false);
+    // Then set a timer to show the monthly modal
+    setTimeout(() => {
+      setIsModalVisibleMonthly(true);
+    }, 500);
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -384,13 +411,7 @@ useEffect(() => {
         <InputNumberAnnual 
           isVisible={isModalVisibleYearly} 
           onClose={handleCloseAnnualModal} 
-          onSave={() => {
-            // When annual salary is saved, automatically show the monthly salary modal
-            setIsModalVisibleYearly(false);
-            setTimeout(() => {
-              setIsModalVisibleMonthly(true);
-            }, 300); // Small delay for better UX
-          }}
+          onSave={handleSalaryInputSequence}
         />
         <InputNumberMonthly 
           isVisible={isModalVisibleMonthly} 
@@ -413,13 +434,22 @@ useEffect(() => {
           onClose={handleCloseExpenseModal}
           expenseToEdit={expenseToEdit}
         />
-        {showDebts === true ? (
+        {showDebts && (
           <Debts onClose={() => {
             console.log('Closing Debts view');
             setShowDebts(false);
           }} />
-        ) : (
-        <ScrollView 
+        )}
+        {showSavings && (
+          <MySavings
+            onClose={() => {
+              console.log('Closing Savings view');
+              setShowSavings(false);
+            }}
+          />
+        )}
+        {!showDebts && !showSavings && (
+          <ScrollView 
             showsVerticalScrollIndicator={false} 
             contentContainerStyle={{ paddingBottom: 120 }}
             className="h-full"
@@ -504,6 +534,7 @@ useEffect(() => {
                   title="Savings" 
                   onPress={() => {
                     console.log('Savings button pressed via ServiceButton');
+                    setShowSavings(true);
                   }}
                   sideText="Track your savings"
                   textStyle="mx-auto"
@@ -539,7 +570,8 @@ useEffect(() => {
                 <ServiceButton 
                   icon={icons.invest} 
                   title="Investment" 
-                  sideText="Coming soon"
+                  onPress={() => router.push("/(root)/(tabs)/invest")} 
+                  sideText="Investing Q&A"
                 />
           </View>
         </View>
@@ -554,7 +586,7 @@ useEffect(() => {
                 <View className="flex-row gap-6">
                   <TouchableOpacity className="py-2" onPress={() => setActiveTab("Expenditures")}>
                     <Text className={`font-rubik-medium text-base ${activeTab === "Expenditures" ? "text-[#7b80ff]" : "text-[#9aa0a6]"}`} >
-                      Recent Expenditures
+                      Recent Transactions
                     </Text>
                     {activeTab === "Expenditures" && (
                       <View className="border-b-2 border-[#7b80ff] mt-1" />
@@ -628,7 +660,11 @@ useEffect(() => {
                                 </Text>
           </View>
         </View>
-                            <Text className="text-white font-rubik-bold text-base">₹{expense.amount}</Text>
+                            <Text className={expense.type === 'income' 
+                              ? "text-[#4CAF50] font-rubik-bold text-base" 
+                              : "text-[#FF5252] font-rubik-bold text-base"}>
+                              {expense.type === 'income' ? '+' : '-'}₹{expense.amount}
+                            </Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
