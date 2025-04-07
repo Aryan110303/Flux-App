@@ -39,7 +39,7 @@ const ServiceButton = ({icon, title, onPress, textStyle, sideText}: ServiceProps
   const isCompactButton = title === "Debts" || title === "Savings";
   
   return (
-    <View className={`${isCompactButton ? "w-[140px]" : "px-6 w-[9rem]"} flex flex-row flex-wrap`}>
+    <View className={`${isCompactButton ? "w-[150px]" : "px-6 w-[9.5rem]"} flex flex-row flex-wrap`}>
       <View className="flex items-center justify-center w-full">
         <TouchableOpacity
           onPress={handlePress}
@@ -552,12 +552,12 @@ useEffect(() => {
                 />
                 <ServiceButton 
                   icon={icons.expense} 
-                  title="All Expenses" 
+                  title="All Transactions" 
                   onPress={() => {
                     router.setParams({ showAllExpenses: 'true' });
                     setShowAllExpenses(true);
                   }} 
-                  sideText="View All Expenses"
+                  sideText="View All Transaction"
                 />
           </View>
               <View className="flex flex-row items-center justify-around mt-8">
