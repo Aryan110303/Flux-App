@@ -12,6 +12,9 @@ export default function Expenses() {
     id: number;
     title: string;
     amount: string;
+    category: string;
+    date?: string;
+    type?: 'expense' | 'income';
   } | undefined>(undefined);
   const { expenses } = useExpenses();
   const { isSalaryInputComplete } = useUserContext();
@@ -21,8 +24,19 @@ export default function Expenses() {
     setExpenseToEdit(undefined);
   };
 
-  const handleOpenExpenseModal = (expense?: { id: number; title: string; amount: string }) => {
-    setExpenseToEdit(expense);
+  const handleOpenExpenseModal = (expense?: { 
+    id: number; 
+    title: string; 
+    amount: string;
+    category?: string;
+    date?: string | number | Date;
+    type?: 'expense' | 'income';
+  }) => {
+    setExpenseToEdit(expense ? {
+      ...expense,
+      category: expense.category || 'uncategorized',
+      date: expense.date ? new Date(expense.date).toISOString() : undefined
+    } : undefined);
     setIsExpModalVisible(true);
   };
 

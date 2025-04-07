@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define TypeScript types
 type Expense = {
+  category: string;
   date: string | number | Date;
   id: number;
   title: string;

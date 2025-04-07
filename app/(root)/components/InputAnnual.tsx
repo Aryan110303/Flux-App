@@ -1,6 +1,7 @@
 import images from '@/constants/images';
+import icons from '@/constants/icons';
 import React, {useState, useRef, useEffect} from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Animated, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Animated, Dimensions, Modal, SafeAreaView } from "react-native";
 import { useUserContext } from '../context/UserContext';
 import { useNavigation } from 'expo-router';
 
@@ -22,7 +23,11 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
       // Hide the tab bar when the modal is visible
       // @ts-ignore
       navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'none' }
+        tabBarStyle: { 
+          display: 'none',
+          height: 0,
+          opacity: 0,
+        }
       });
       Animated.timing(translateY, {
         toValue: 0,
@@ -34,12 +39,14 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
       // @ts-ignore
       navigation.getParent()?.setOptions({
         tabBarStyle: {
+          display: 'flex',
           backgroundColor: '#1f2630',
           position: 'absolute',
           borderTopColor: '#0061FF1A',
           borderTopWidth: 0.2,
           minHeight: 70,
           height: 70,
+          opacity: 1,
         }
       });
       Animated.timing(translateY, {
@@ -54,12 +61,14 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
       // @ts-ignore
       navigation.getParent()?.setOptions({
         tabBarStyle: {
+          display: 'flex',
           backgroundColor: '#1f2630',
           position: 'absolute',
           borderTopColor: '#0061FF1A',
           borderTopWidth: 0.2,
           minHeight: 70,
           height: 70,
+          opacity: 1,
         }
       });
     };
@@ -82,58 +91,62 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
       return;
     }
     console.log("Annual Salary saved:", salaryNum);
-    // First set the salary in context
     setSalaryYearly(salaryNum);
-    
-    // Call onSave to trigger the next step (showing monthly modal)
     console.log("Calling onSave to trigger transition to monthly modal");
     onSave();
-    
-    // No need to call onClose here as it will be handled by the parent component
   }
 
   return (
-    <View style={[styles.container, { width, height }]}>
-      <Animated.View 
-        style={[
-          styles.overlay,
-          { 
-            transform: [{ translateY }],
-            width,
-            height,
-          }
-        ]}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
-          <Text className='text-primary text-xl font-rubik pt-4'>{salaryYearly > 0 ? "Salary": "Add a Salary"}</Text>
-          <TouchableOpacity>
-            <Image source={images.avatar} className='size-8'/>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.salaryText}>₹ {localSalary}</Text>
-        <Text style={styles.subtitle} className='font-rubik'>Add Your Annual Salary</Text>
-
-        <View style={styles.keypad}>
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9",".", "0", "⌫"].map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.key}
-              onPress={() => (item === "⌫" ? handleDelete() : handlePress(item))}
-            >
-              <Text  className='font-barlow text-primary text-2xl'>{item}</Text>
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      transparent={false}
+      statusBarTranslucent={true}
+    >
+      <SafeAreaView style={[styles.container, { width, height }]}>
+        <View 
+          style={[
+            styles.overlay,
+            { 
+              width,
+              height,
+            }
+          ]}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+              <Image source={icons.backArrow} style={styles.backIcon} tintColor="#7b80ff" />
             </TouchableOpacity>
-          ))}
-        </View>
+            <Text style={styles.headerTitle}>{salaryYearly > 0 ? "Edit Salary" : "Add Salary"}</Text>
+            <TouchableOpacity style={styles.avatarContainer}>
+              <Image source={images.avatar} style={styles.avatar} />
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-          <Text className='text-primary font-rubik'>Save</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+          <Text style={styles.salaryText}>₹ {localSalary}</Text>
+          <Text style={styles.subtitle}>Add Your Annual Salary</Text>
+
+          <View style={styles.keypad}>
+            {["1", "2", "3", "4", "5", "6", "7", "8", "9",".", "0", "⌫"].map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.key}
+                onPress={() => (item === "⌫" ? handleDelete() : handlePress(item))}
+              >
+                <Text style={styles.keyText}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity 
+            onPress={handleSave} 
+            style={styles.saveButton}
+          >
+            <Text style={styles.saveText}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </Modal>
   );
 };
 
@@ -141,26 +154,14 @@ export default InputNumberAnnual;
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     backgroundColor: '#1f2630',
-    zIndex: 9999,
-    elevation: 9999,
   },
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     backgroundColor: '#1f2630',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 9999,
-    elevation: 9999,
   },
   header: {
     position: "absolute",
@@ -171,19 +172,32 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  backText: {
-    fontSize: 24,
-    color: "#fff",
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
   },
   headerTitle: {
     fontSize: 18,
     color: "#fff",
     fontWeight: "bold",
-    fontFamily: "rubik",
+    fontFamily: "Rubik",
   },
-  profileIcon: {
-    fontSize: 18,
-    color: "#fff",
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   salaryText: {
     color: "#fff",
@@ -191,10 +205,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     marginTop: 100,
+    fontFamily: "Rubik-Bold",
   },
   subtitle: {
     color: "#aaa",
     marginBottom: 20,
+    fontFamily: "Rubik",
   },
   keypad: {
     flexDirection: "row",
@@ -211,7 +227,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   keyText: {
-    color: "#e0cfd9",
+    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
     fontFamily: 'Barlow',
@@ -225,8 +241,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveText: {
-    color: "#e0cfd9",
+    color: "#fff",
     fontWeight: "bold",
     fontFamily: "Rubik",
+    fontSize: 16,
   },
 });

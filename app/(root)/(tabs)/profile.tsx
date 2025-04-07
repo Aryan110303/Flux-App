@@ -9,12 +9,14 @@ import Calendar from '../components/Calendar';
 import InviteFriends from '../components/InviteFriends';
 import About from '../components/About';
 import { logout } from '@/lib/appwrite';
+import Trends from '@/app/(root)/components/Trends';
 
 const { width } = Dimensions.get('window');
 
 const Profile = () => {
   const { user } = useGlobalContext();
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
+  const [showTrends, setShowTrends] = useState(false);
 
   const handleCloseScreen = () => {
     setActiveScreen(null);
@@ -59,103 +61,107 @@ const Profile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.safeArea}>
-        <ScrollView 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Profile</Text>
-            <TouchableOpacity 
-              onPress={logout}
-              style={styles.logoutButton}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* User Info Card */}
-          <View style={styles.userCard}>
-            <View style={styles.avatarContainer}>
-              <Image
-                source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
-                style={styles.avatar}
-              />
-              <TouchableOpacity style={styles.editAvatarButton} activeOpacity={0.7}>
-                <Text style={styles.editAvatarText}>✎</Text>
+      {showTrends ? (
+        <Trends onClose={() => setShowTrends(false)} />
+      ) : (
+        <View style={styles.safeArea}>
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Profile</Text>
+              <TouchableOpacity 
+                onPress={logout}
+                style={styles.logoutButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.logoutText}>Logout</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
-            
-            {/* Stats Row */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>$12,450</Text>
-                <Text style={styles.statLabel}>Balance</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>$2,150</Text>
-                <Text style={styles.statLabel}>Savings</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>$850</Text>
-                <Text style={styles.statLabel}>Invested</Text>
-              </View>
-            </View>
-          </View>
 
-          {/* Quick Actions */}
-          <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={styles.quickActionButton} 
-              activeOpacity={0.7}
-              onPress={() => setActiveScreen('my-savings')}
-            >
-              <View style={styles.quickActionIcon}>
-                <Text style={styles.quickActionIconText}>💰</Text>
-              </View>
-              <Text style={styles.quickActionText}>My Savings</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.quickActionButton} 
-              activeOpacity={0.7}
-              onPress={() => setActiveScreen('payments')}
-            >
-              <View style={styles.quickActionIcon}>
-                <Text style={styles.quickActionIconText}>💳</Text>
-              </View>
-              <Text style={styles.quickActionText}>Payments</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionButton} activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Text style={styles.quickActionIconText}>⚙️</Text>
-              </View>
-              <Text style={styles.quickActionText}>Settings</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Settings Section */}
-          <View style={styles.settingsSection}>
-            <Text style={styles.sectionTitle}>Settings</Text>
-            <View style={styles.settingsList}>
-              {settings.map((item) => (
-                <SettingsItem
-                  key={item.id}
-                  icon={item.icon}
-                  title={item.title}
-                  route={item.route}
-                  onPress={() => setActiveScreen(item.route)}
+            {/* User Info Card */}
+            <View style={styles.userCard}>
+              <View style={styles.avatarContainer}>
+                <Image
+                  source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
+                  style={styles.avatar}
                 />
-              ))}
+                <TouchableOpacity style={styles.editAvatarButton} activeOpacity={0.7}>
+                  <Text style={styles.editAvatarText}>✎</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
+              <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+              
+              {/* Stats Row */}
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>$12,450</Text>
+                  <Text style={styles.statLabel}>Balance</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>$2,150</Text>
+                  <Text style={styles.statLabel}>Savings</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>$850</Text>
+                  <Text style={styles.statLabel}>Invested</Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </View>
+
+            {/* Quick Actions */}
+            <View style={styles.quickActions}>
+              <TouchableOpacity 
+                style={styles.quickActionButton} 
+                activeOpacity={0.7}
+                onPress={() => setActiveScreen('my-savings')}
+              >
+                <View style={styles.quickActionIcon}>
+                  <Text style={styles.quickActionIconText}>💰</Text>
+                </View>
+                <Text style={styles.quickActionText}>My Savings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.quickActionButton} 
+                activeOpacity={0.7}
+                onPress={() => setActiveScreen('payments')}
+              >
+                <View style={styles.quickActionIcon}>
+                  <Text style={styles.quickActionIconText}>💳</Text>
+                </View>
+                <Text style={styles.quickActionText}>Payments</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.quickActionButton} activeOpacity={0.7}>
+                <View style={styles.quickActionIcon}>
+                  <Text style={styles.quickActionIconText}>⚙️</Text>
+                </View>
+                <Text style={styles.quickActionText}>Settings</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Settings Section */}
+            <View style={styles.settingsSection}>
+              <Text style={styles.sectionTitle}>Settings</Text>
+              <View style={styles.settingsList}>
+                {settings.map((item) => (
+                  <SettingsItem
+                    key={item.id}
+                    icon={item.icon}
+                    title={item.title}
+                    route={item.route}
+                    onPress={() => setActiveScreen(item.route)}
+                  />
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      )}
     </SafeAreaView>
   );
 };

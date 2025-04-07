@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, TextInput, Alert, StyleSheet, Dimensions, Animated } from 'react-native';
 import React, { useState } from 'react';
 import icons from '@/constants/icons';
+import images from '@/constants/images';
 import { useExpenses } from '../context/ExpenseContext';
 
 interface PaymentsProps {
@@ -66,6 +67,86 @@ const Payments = ({ onClose }: PaymentsProps) => {
     setRecurringAmount('');
     setRecurringDay('1');
   };
+
+  const styles = StyleSheet.create({
+    container: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#1f2630',
+      zIndex: 9999,
+      elevation: 9999,
+    },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#1f2630',
+      zIndex: 9999,
+      elevation: 9999,
+    },
+    header: {
+      position: "absolute",
+      top: 50,
+      left: 20,
+      right: 20,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      zIndex: 1000,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+    },
+    backIcon: {
+      width: 24,
+      height: 24,
+    },
+    headerTitle: {
+      fontSize: 18,
+      color: "#fff",
+      fontWeight: "bold",
+      fontFamily: "Rubik",
+    },
+    avatarContainer: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    avatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+    },
+    scrollView: {
+      flex: 1,
+      marginTop: 120,
+      paddingHorizontal: 20,
+    },
+    inputContainer: {
+      marginBottom: 24,
+    },
+    inputLabel: {
+      color: "#9aa0a6",
+      fontFamily: "Rubik",
+      marginBottom: 8,
+    },
+    input: {
+      backgroundColor: "#2A3547",
+      padding: 16,
+      borderRadius: 8,
+      color: "#fff",
+      fontFamily: "Rubik",
+    },
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-[#1f2630]">
@@ -223,41 +304,52 @@ const Payments = ({ onClose }: PaymentsProps) => {
 
             {/* Add Recurring Payment Modal */}
             {showAddRecurring && (
-              <View className="absolute inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
-                <View className="bg-[#3E4D67] w-full rounded-xl p-8 max-h-[85%]">
-                  <View className="flex-row justify-between items-center mb-8">
-                    <Text className="text-white font-rubik-bold text-xl">Add Recurring Payment</Text>
-                    <TouchableOpacity onPress={() => setShowAddRecurring(false)}>
-                      <Image source={icons.cross} className="size-5" tintColor="#9aa0a6" />
+              <View style={[styles.container, { width: Dimensions.get('window').width, height: Dimensions.get('window').height }]}>
+                <View 
+                  style={[
+                    styles.overlay,
+                    { 
+                      width: Dimensions.get('window').width,
+                      height: Dimensions.get('window').height,
+                    }
+                  ]}
+                >
+                  <View style={styles.header}>
+                    <TouchableOpacity onPress={() => setShowAddRecurring(false)} style={styles.backButton}>
+                      <Image source={icons.backArrow} style={styles.backIcon} tintColor="#7b80ff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Add Recurring Payment</Text>
+                    <TouchableOpacity style={styles.avatarContainer}>
+                      <Image source={images.avatar} style={styles.avatar} />
                     </TouchableOpacity>
                   </View>
                   
-                  <ScrollView showsVerticalScrollIndicator={false} className="max-h-[70vh]">
-                    <View className="mb-6">
-                      <Text className="text-[#9aa0a6] font-rubik mb-2">Title</Text>
+                  <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Title</Text>
                       <TextInput
                         value={recurringTitle}
                         onChangeText={setRecurringTitle}
                         placeholder="e.g., Rent, Netflix, Gym"
                         placeholderTextColor="#9aa0a6"
-                        className="bg-[#2A3547] p-4 rounded-lg text-white font-rubik"
+                        style={styles.input}
                       />
                     </View>
                     
-                    <View className="mb-6">
-                      <Text className="text-[#9aa0a6] font-rubik mb-2">Amount</Text>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Amount</Text>
                       <TextInput
                         value={recurringAmount}
                         onChangeText={setRecurringAmount}
                         placeholder="Enter amount"
                         placeholderTextColor="#9aa0a6"
                         keyboardType="numeric"
-                        className="bg-[#2A3547] p-4 rounded-lg text-white font-rubik"
+                        style={styles.input}
                       />
                     </View>
                     
-                    <View className="mb-6">
-                      <Text className="text-[#9aa0a6] font-rubik mb-2">Frequency</Text>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Frequency</Text>
                       <View className="flex-row">
                         {['Monthly', 'Weekly', 'Bi-weekly'].map((freq) => (
                           <TouchableOpacity
@@ -273,15 +365,15 @@ const Payments = ({ onClose }: PaymentsProps) => {
                       </View>
                     </View>
                     
-                    <View className="mb-8">
-                      <Text className="text-[#9aa0a6] font-rubik mb-2">Day</Text>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Day</Text>
                       <TextInput
                         value={recurringDay}
                         onChangeText={setRecurringDay}
                         placeholder={recurringFrequency === 'Monthly' ? 'Day of month (1-31)' : 'Day of week (1-7)'}
                         placeholderTextColor="#9aa0a6"
                         keyboardType="numeric"
-                        className="bg-[#2A3547] p-4 rounded-lg text-white font-rubik"
+                        style={styles.input}
                       />
                     </View>
                     

@@ -24,11 +24,11 @@
 ## Profile Section - New Features
 
 ### Reports Tab
-- [ ] Monthly expense reports
-  - [ ] PDF export functionality
-  - [ ] CSV export option
-  - [ ] Report preview
-  - [ ] Share functionality
+- [x] Monthly expense reports
+  - [x] PDF export functionality
+  - [x] CSV export option
+  - [x] Report preview
+  - [x] Share functionality
 
 - [ ] Analytics and Insights
   - [ ] Spending trends visualization

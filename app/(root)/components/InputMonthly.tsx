@@ -1,7 +1,7 @@
 import images from '@/constants/images';
 import icons from '@/constants/icons';
 import React, {useState, useRef, useEffect} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Animated, Switch, ScrollView, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Switch, ScrollView, Dimensions, Modal, SafeAreaView } from "react-native";
 import { useUserContext, RecurrenceType } from '../context/UserContext';
 import { useNavigation } from 'expo-router';
 
@@ -22,7 +22,6 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
     setRecurrenceFrequency
   } = useUserContext();
   
-  const translateY = useRef(new Animated.Value(800)).current;
   const [currentView, setCurrentView] = useState<'keypad' | 'recurrence'>('keypad');
   const navigation = useNavigation();
   const { height, width } = Dimensions.get('window');
@@ -34,61 +33,6 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
       console.log("Monthly modal is now visible, view set to keypad");
     }
   }, [isVisible]);
-
-  useEffect(() => {
-    if (isVisible) {
-      // Hide the tab bar when the modal is visible
-      console.log("Monthly modal becoming visible");
-      // @ts-ignore
-      navigation.getParent()?.setOptions({
-        tabBarStyle: { 
-          display: 'none',
-          height: 0,
-          opacity: 0,
-        }
-      });
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      console.log("Monthly modal becoming hidden");
-      // Show the tab bar when the modal is hidden
-      // @ts-ignore
-      navigation.getParent()?.setOptions({
-        tabBarStyle: {
-          display: 'flex',
-          backgroundColor: '#1f2630',
-          position: 'absolute',
-          borderTopColor: '#0061FF1A',
-          borderTopWidth: 0.2,
-          minHeight: 70,
-          height: 70,
-          opacity: 1,
-        }
-      });
-      Animated.timing(translateY, {
-        toValue: height,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-
-    return () => {
-      // @ts-ignore
-      navigation.getParent()?.setOptions({
-        tabBarStyle: {
-          backgroundColor: '#1f2630',
-          position: 'absolute',
-          borderTopColor: '#0061FF1A',
-          borderTopWidth: 0.2,
-          minHeight: 70,
-          height: 70,
-        }
-      });
-    };
-  }, [isVisible, navigation]);
 
   if (!isVisible) return null;
 
@@ -233,36 +177,42 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
   );
 
   return (
-    <View style={[styles.container, { width, height }]}>
-      <Animated.View
-        style={[
-          styles.overlay,
-          {
-            transform: [{ translateY }],
-            width,
-            height,
-          }
-        ]}
-      >
-        {/* Header with Back Button */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.backButton}>
-            <Image source={icons.backArrow} style={styles.backIcon} tintColor="#7b80ff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {currentView === 'keypad' 
-              ? (salaryMonthly > "0" ? "Edit Income" : "Add Income") 
-              : "Income Settings"}
-          </Text>
-          <TouchableOpacity style={styles.avatarContainer}>
-            <Image source={images.avatar} style={styles.avatar} />
-          </TouchableOpacity>
-        </View>
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      transparent={false}
+      statusBarTranslucent={true}
+    >
+      <SafeAreaView style={[styles.container, { width, height }]}>
+        <View
+          style={[
+            styles.overlay,
+            {
+              width,
+              height,
+            }
+          ]}
+        >
+          {/* Header with Back Button */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+              <Image source={icons.backArrow} style={styles.backIcon} tintColor="#7b80ff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              {currentView === 'keypad' 
+                ? (salaryMonthly > "0" ? "Edit Income" : "Add Income") 
+                : "Income Settings"}
+            </Text>
+            <TouchableOpacity style={styles.avatarContainer}>
+              <Image source={images.avatar} style={styles.avatar} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Content View - Keypad or Recurrence */}
-        {currentView === 'keypad' ? renderKeypadView() : renderRecurrenceView()}
-      </Animated.View>
-    </View>
+          {/* Content View - Keypad or Recurrence */}
+          {currentView === 'keypad' ? renderKeypadView() : renderRecurrenceView()}
+        </View>
+      </SafeAreaView>
+    </Modal>
   );
 };
 
@@ -270,27 +220,14 @@ export default InputNumberMonthly;
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     backgroundColor: '#1f2630',
-    zIndex: 9999,
-    elevation: 9999,
   },
   overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "#1f2630",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
+    flex: 1,
+    backgroundColor: '#1f2630',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     position: "absolute",

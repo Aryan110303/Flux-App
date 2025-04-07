@@ -24,6 +24,7 @@ import {
     isVisible: boolean;
     onClose: () => void;
     expenseToEdit?: {
+      category: string;
       id: number;
       title: string;
       amount: string;
@@ -111,7 +112,8 @@ import {
           title: title.trim(),
           amount: amount.trim().replace(/,/g, ''),
           date: expenseToEdit.date || new Date().toISOString(),
-          type: transactionType
+          type: transactionType,
+          category: expenseToEdit.category || 'uncategorized'
         };
         updateExpense(expenseToEdit.id, updatedExpense);
         
@@ -128,7 +130,8 @@ import {
           title: title.trim(),
           amount: amount.trim().replace(/,/g, ''),
           date: new Date().toISOString(),
-          type: transactionType
+          type: transactionType,
+          category: 'uncategorized'
         };
         addExpense(newExpense);
         

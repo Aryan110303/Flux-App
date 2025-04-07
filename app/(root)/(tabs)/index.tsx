@@ -201,6 +201,9 @@ export default function Home() {
     id: number;
     title: string;
     amount: string;
+    category: string;
+    date?: string;
+    type?: 'expense' | 'income';
   } | undefined>(undefined);
 
   const handleAdd = () => {
@@ -224,8 +227,26 @@ export default function Home() {
     setExpenseToEdit(undefined);
   };
 
-  const handleOpenExpenseModal = (expense?: { id: number; title: string; amount: string; date?: string | number | Date; type?: 'expense' | 'income' }) => {
-    setExpenseToEdit(expense);
+  const handleOpenExpenseModal = (expense?: { 
+    id: number; 
+    title: string; 
+    amount: string; 
+    category?: string;
+    date?: string | number | Date; 
+    type?: 'expense' | 'income' 
+  }) => {
+    if (expense) {
+      setExpenseToEdit({
+        id: expense.id,
+        title: expense.title,
+        amount: expense.amount,
+        category: expense.category || 'uncategorized',
+        date: expense.date ? new Date(expense.date).toISOString() : undefined,
+        type: expense.type
+      });
+    } else {
+      setExpenseToEdit(undefined);
+    }
     setIsExpModalVisible(true);
   };
 
@@ -316,6 +337,7 @@ useEffect(() => {
       tabBarStyle: shouldHideNav ? {
         display: "none",
         height: 0,
+        opacity: 0,
       } : {
         backgroundColor: '#1f2630',
         position: 'absolute',
@@ -323,6 +345,7 @@ useEffect(() => {
         borderTopWidth: 0.2,
         minHeight: 70,
         height: 70,
+        opacity: 1,
       }
     });
 
@@ -336,6 +359,7 @@ useEffect(() => {
           borderTopWidth: 0.2,
           minHeight: 70,
           height: 70,
+          opacity: 1,
         }
       });
     };
@@ -355,7 +379,13 @@ useEffect(() => {
               onOpenModal={(expense) => {
                 console.log('Opening expense modal with:', expense);
                 if (expense) {
-                  setExpenseToEdit(expense);
+                  setExpenseToEdit({
+                    id: expense.id,
+                    title: expense.title,
+                    amount: expense.amount,
+                    category: 'uncategorized',
+                    date: new Date().toISOString()
+                  });
                 } else {
                   setExpenseToEdit(undefined);
                 }
