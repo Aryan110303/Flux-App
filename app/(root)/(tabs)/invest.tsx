@@ -14,9 +14,14 @@ const COLORS = {
 };
 
 // You'll need to get a free API token from huggingface.co
-// This would normally be stored in .env file, not hardcoded
-const HF_TOKEN = "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"; // Replace with your token
+// This is loaded from the .env.local file for security
+const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_TOKEN || "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";
 const hf = new HfInference(HF_TOKEN);
+
+// Function to check if API is configured
+const isApiConfigured = () => {
+  return HF_TOKEN !== "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";
+};
 
 // Indian investment dataset
 // This would normally be imported from a file
@@ -248,7 +253,7 @@ const InvestScreen = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
   const [qaDataset, setQaDataset] = useState(INDIAN_INVESTMENT_QA);
   const [datasetStatus, setDatasetStatus] = useState('loading'); // 'loading', 'loaded', 'error'
   const [datasetSize, setDatasetSize] = useState(5); // Default to sample size
@@ -316,18 +321,18 @@ const InvestScreen = () => {
       const response = await fetch('https://www.google.com', { 
         method: 'HEAD'
       });
-      setIsOfflineMode(!response.ok);
+      setIsConnected(response.ok);
     } catch (error) {
       console.log('Network connectivity issue:', error);
-      setIsOfflineMode(true);
+      setIsConnected(false);
     }
   };
 
-  // Find the most similar question in our dataset
+  // Find similar question in our dataset
   const findSimilarQuestion = (question: string) => {
     const userQ = question.toLowerCase();
     
-    // Look for exact matches first
+    // Check for exact matches first
     const exactMatch = qaDataset.find(
       item => item.question.toLowerCase() === userQ
     );
@@ -338,7 +343,11 @@ const InvestScreen = () => {
     let highestScore = 0;
     
     for (const item of qaDataset) {
-      const score = calculateSimilarity(userQ, item.question.toLowerCase());
+      const score = calculateSimilarity(
+        userQ,
+        item.question.toLowerCase()
+      );
+      
       if (score > highestScore && score > 0.6) { // Threshold for similarity
         highestScore = score;
         bestMatch = item;
@@ -617,165 +626,116 @@ const InvestScreen = () => {
 
   // Enhanced model response with better prompting, dataset usage, and safeguards
   const getModelResponse = async (question: string): Promise<string> => {
-    // First check if the question is about investment rules
-    const ruleResponse = getInvestmentRule(question);
-    if (ruleResponse) {
-      return ruleResponse;
-    }
-    
-    // Check if we have a similar question in our dataset
-    const datasetAnswer = findSimilarQuestion(question);
-    if (datasetAnswer) {
-      return datasetAnswer;
-    }
-    
-    // Check if question is out of scope
-    if (isOutOfScopeQuestion(question)) {
-      // Determine the type of out-of-scope question for better response
-      const lowerQuestion = question.toLowerCase();
-      
-      // Check for prohibited financial topics
-      const prohibitedFinancialTopics = [
-        'loan shark', 'money laundering', 'tax evasion', 'black money', 
-        'insider trading', 'gambling', 'betting', 'casino', 
-        'pyramid scheme', 'ponzi', 'get rich quick', 'guaranteed returns',
-        'cryptocurrency', 'bitcoin', 'dogecoin', 'ethereum', 'nft',
-        'illegal', 'fraud', 'scam', 'smuggling', 'bribe', 
-        'hack', 'loophole', 'under the table', 'without paying tax',
-        'offshore account', 'shell company'
-      ];
-      
-      for (const topic of prohibitedFinancialTopics) {
-        if (lowerQuestion.includes(topic)) {
-          return "I'm designed to provide educational information about legitimate financial strategies and investment options in India. I cannot provide information on potentially illegal or unethical financial activities.\n\nInstead, I'd be happy to explain how various legal investment options work, such as mutual funds, PPF, or fixed deposits. Would you like to know about any of these?\n\nDisclaimer: All information is for educational purposes only and not financial advice.";
-        }
-      }
-      
-      // Check for specific investment advice questions
-      const specificAdvicePatterns = [
-        'which stock should i buy', 'which mutual fund is best',
-        'where should i invest', 'best investment for',
-        'recommend a', 'tell me which', 'which is better',
-        'should i buy', 'should i sell', 'is it a good time to',
-        'will the market', 'predict the', 'what will happen to',
-        'guaranteed profit', 'guaranteed return', 'highest return',
-        'safest investment', 'best return'
-      ];
-      
-      for (const pattern of specificAdvicePatterns) {
-        if (lowerQuestion.includes(pattern)) {
-          return "I'm designed to provide educational information about investing, not personalized investment advice or recommendations.\n\nInstead of specific recommendations, I can explain how different investment options work, their typical characteristics, or general investment principles like diversification or asset allocation. You might also be interested in learning about common investment rules like the 50-30-20 budget rule or the Rule of 72.\n\nWhat aspect of investing would you like to learn more about?\n\nDisclaimer: All information is for educational purposes only and not financial advice.";
-        }
-      }
-      
-      // Check for non-financial questions
-      const nonFinancialPatterns = [
-        'how are you', 'your name', 'who are you', 'tell me about yourself',
-        'what is the meaning of life', 'tell me a joke', 'sing a song',
-        'what is your favorite', 'do you like', 'weather', 'cricket',
-        'politics', 'religion', 'god', 'sex', 'dating', 'girlfriend', 'boyfriend',
-        'recipe', 'cook', 'movie', 'game', 'play'
-      ];
-      
-      for (const pattern of nonFinancialPatterns) {
-        if (lowerQuestion.includes(pattern)) {
-          return "I'm a financial education assistant focused on providing information about Indian investments and financial strategies. I'm not designed to engage in general conversation or discuss topics outside of investments and personal finance.\n\nI can help with questions about investment options, financial terms, or money management strategies. Would you like to know about SIPs, mutual funds, or perhaps some common investment rules like the 50-30-20 budget rule?\n\nDisclaimer: All information is for educational purposes only and not financial advice.";
-        }
-      }
-      
-      // Default out-of-scope response
-      return "I'm designed to provide educational information about Indian investments, not specific investment advice or recommendations. I can't advise on which specific products to buy, make predictions about markets, or discuss prohibited financial activities.\n\nInstead, I can help you understand investment concepts, terms, or general strategies. You might be interested in learning about investment rules like the 50-30-20 budget rule or the Rule of 72.\n\nDisclaimer: All information is for educational purposes only and not financial advice.";
-    }
-    
-    // Use offline mode if connectivity issues or for testing
-    if (isOfflineMode) {
-      return getFallbackResponse(question);
-    }
-    
     try {
       // Check for direct terminology matches first
-      const financialTermMatch = findFinancialTerm(question);
-      if (financialTermMatch) {
-        return financialTermMatch + "\n\nDisclaimer: This information is educational only and not financial advice.";
+      const termMatch = findFinancialTerm(question);
+      if (termMatch) {
+        return termMatch;
       }
-
-      // Find relevant context from our dataset for better answers
-      const relevantQuestions = getRelevantQuestionsForContext(question);
-      const contextSection = relevantQuestions.length > 0 
-        ? "\n\nRELEVANT CONTEXT FOR YOUR REFERENCE:\n" + 
-          relevantQuestions.map(q => `Q: ${q.question}\nA: ${q.answer}`).join("\n\n")
-        : "";
-
-      // Create a more detailed context-rich prompt
-      const systemPrompt = `
-        You are a financial education assistant specializing in Indian investment options.
-        You MUST provide accurate, educational information about investment terms and options in India.
-        You NEVER provide financial advice, recommendations for specific products, or predictions.
-        
-        IMPORTANT RULES:
-        1. Do not recommend specific investment products, funds, or companies
-        2. Do not predict market movements or returns
-        3. Always include disclaimers about educational purpose
-        4. Focus on explaining concepts, not giving advice
-        5. Be neutral and objective in all explanations
-        6. Never suggest what a person should do with their money
-        7. Use rupees (₹) for all monetary values
-        
-        IMPORTANT DEFINITIONS TO KEEP IN MIND:
-        - SIP (Systematic Investment Plan): A method to invest a fixed amount regularly in mutual funds, typically monthly
-        - ELSS: Equity Linked Savings Scheme, a tax-saving mutual fund with 3-year lock-in
-        - Mutual Funds: Investment vehicles that pool money to invest in stocks, bonds, etc.
-        - PPF: Public Provident Fund, a government-backed long-term savings scheme
-        - NPS: National Pension System, a voluntary retirement savings scheme
-        
-        User's financial context:
-        - Goal: ${goal || 'Not specified'}
-        - Goal amount: ₹${goalAmount?.toLocaleString() || 'Not specified'}
-        - Monthly savings capacity: ₹${savings?.toLocaleString() || 'Not specified'}
-        
-        Question: ${question}${contextSection}
-        
-        Provide a clear, accurate, educational response about Indian investments. Include a disclaimer at the end:
-      `;
       
-      // Call Hugging Face API with improved parameters
-      const response = await hf.textGeneration({
-        model: 'google/flan-t5-small',
+      // Check if API is configured
+      if (!isApiConfigured()) {
+        return getFallbackResponse(question);
+      }
+      
+      // If connectivity/API not available, use fallback
+      if (!isConnected) {
+        return getFallbackResponse(question);
+      }
+      
+      // Check similar questions in dataset
+      const similarQuestion = findSimilarQuestion(question);
+      if (similarQuestion) {
+        return similarQuestion;
+      }
+      
+      // Check for investment rule questions
+      const ruleResponse = getInvestmentRule(question);
+      if (ruleResponse) {
+        return ruleResponse;
+      }
+      
+      // Check if it's a goal-based question
+      if (question.toLowerCase().includes("invest") && 
+          (question.toLowerCase().includes("year") || 
+           question.toLowerCase().includes("month") || 
+           question.toLowerCase().includes("time"))) {
+        const timeframe = parseGoalTimeframe(question);
+        if (timeframe) {
+          return getRecommendationForTimeframe(timeframe);
+        }
+      }
+      
+      // Get relevant questions from our dataset to provide as context
+      const relevantQuestions = getRelevantQuestionsForContext(question);
+      let context = "";
+      
+      if (relevantQuestions.length > 0) {
+        context = "Here are some relevant financial facts that might help answer the question:\n\n";
+        relevantQuestions.forEach(q => {
+          const dataAnswer = INDIAN_INVESTMENT_QA.find(item => item.question.toLowerCase() === q.toLowerCase());
+          if (dataAnswer?.answer) {
+            context += `Q: ${q}\nA: ${dataAnswer.answer}\n\n`;
+          }
+        });
+      }
+      
+      // Rich contextual prompt for the model
+      const systemPrompt = `You are a helpful financial assistant specialized in Indian investments and personal finance. 
+You provide educational information about investment terms and options in India.
+Always be factual and accurate. If you're unsure, say you don't know rather than providing incorrect information.
+Focus on Indian financial products, tax laws, and investment strategies.
+
+${Object.entries(FINANCIAL_TERMS).map(([term, definition]) => `${term.toUpperCase()}: ${definition}`).join('\n\n')}
+
+For SIPs specifically: 
+SIP stands for Systematic Investment Plan. It is a method of investing in mutual funds where you contribute a fixed amount regularly (typically monthly). SIPs allow investors to benefit from rupee cost averaging and the power of compounding. SIPs in India typically start from as low as ₹500 per month.
+
+Remember:
+1. Keep explanations clear and simple
+2. Focus on Indian investment context when applicable
+3. Add "Disclaimer: This information is for educational purposes only and not financial advice" to your answer
+
+${context}
+
+Question: ${question}`;
+      
+      // Query the model
+      const result = await hf!.textGeneration({
+        model: "google/flan-t5-xxl",
         inputs: systemPrompt,
         parameters: {
-          max_length: 300,  // Longer response for more completeness
-          temperature: 0.4, // Lower temperature for more factual responses
-          top_p: 0.90,
-          repetition_penalty: 1.2
+          max_new_tokens: 1024,
+          temperature: 0.3,
+          top_p: 0.95,
+          do_sample: true,
         }
       });
       
-      // Process and return the response
-      let generatedText = response.generated_text || '';
+      let response = result.generated_text;
       
       // Clean up the response
-      generatedText = generatedText.trim();
+      response = response.trim();
       
       // Check if response seems irrelevant or too generic
-      if (isIrrelevantResponse(generatedText, question)) {
+      if (isIrrelevantResponse(response, question)) {
         return getFallbackResponse(question);
       }
       
       // Add disclaimer if not present
-      if (!generatedText.toLowerCase().includes('disclaimer') && 
-          !generatedText.toLowerCase().includes('educational')) {
-        generatedText += "\n\nDisclaimer: This information is for educational purposes only and not financial advice.";
+      if (!response.toLowerCase().includes('disclaimer') && 
+          !response.toLowerCase().includes('educational')) {
+        response += "\n\nDisclaimer: This information is for educational purposes only and not financial advice.";
       }
       
-      return generatedText;
-      
+      return response;
     } catch (error) {
       console.error('Error calling Hugging Face API:', error);
       Alert.alert(
         'Connection Error', 
         'Could not connect to the AI service. Using offline mode.'
       );
-      setIsOfflineMode(true);
+      setIsConnected(false);
       return getFallbackResponse(question);
     }
   };
@@ -783,7 +743,7 @@ const InvestScreen = () => {
   // Get relevant questions from our dataset to provide as context
   const getRelevantQuestionsForContext = (userQuestion: string) => {
     const lowerQuestion = userQuestion.toLowerCase();
-    const relevantQuestions = [];
+    const relevantQuestions: string[] = [];
     
     // Extract key terms from the user question
     const keyTerms = extractKeyTerms(lowerQuestion);
@@ -801,7 +761,7 @@ const InvestScreen = () => {
       
       // Add questions with enough matching terms
       if (matchCount >= 2 && relevantQuestions.length < 3) {
-        relevantQuestions.push(item);
+        relevantQuestions.push(item.question);
       }
     }
     
