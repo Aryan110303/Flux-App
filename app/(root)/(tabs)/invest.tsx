@@ -15,12 +15,12 @@ const COLORS = {
 
 // You'll need to get a free API token from huggingface.co
 // This is loaded from the .env.local file for security
-const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_TOKEN || "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";
-const hf = new HfInference(HF_TOKEN);
+const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_TOKEN;
+const hf = HF_TOKEN ? new HfInference(HF_TOKEN) : null;
 
 // Function to check if API is configured
 const isApiConfigured = () => {
-  return HF_TOKEN !== "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";
+  return HF_TOKEN !== undefined && HF_TOKEN !== null;
 };
 
 // Indian investment dataset
