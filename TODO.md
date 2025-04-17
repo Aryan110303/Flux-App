@@ -30,12 +30,12 @@
   - [x] Report preview
   - [x] Share functionality
 
-- [ ] Analytics and Insights
-  - [ ] Spending trends visualization
-  - [ ] Category-wise breakdown
-  - [ ] Savings progress tracker
-  - [ ] Highest spending category highlight
-  - [ ] Best saving month indicator
+- [x] Analytics and Insights
+  - [x] Spending trends visualization
+  - [x] Category-wise breakdown
+  - [x] Savings progress tracker
+  - [x] Highest spending category highlight
+  - [x] Best saving month indicator
 
 ### Calendar View
 - [ ] Monthly calendar implementation

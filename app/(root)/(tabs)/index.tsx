@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, SafeAreaView, ImageSourcePropType, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, Image, SafeAreaView, ImageSourcePropType, ScrollView, Platform } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
@@ -19,6 +19,11 @@ import { router, useNavigation } from "expo-router";
 import { useGlobalContext } from "@/lib/global-provider";
 import Debts from "../components/debts";
 import MySavings from "../components/MySavings";
+import NotificationHandler from '../components/NotificationHandler';
+import NotificationService from '@/lib/NotificationService';
+import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ServiceProps{
   icon: ImageSourcePropType,
@@ -182,6 +187,39 @@ export default function Home() {
   const {user} = useGlobalContext();
   const exchangeRate = 86.69;
 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    // Initialize notification service
+    const notificationService = NotificationService.getInstance();
+    
+    // Load unread count
+    loadUnreadCount();
+
+    // Listen for new notifications
+    const subscription = Notifications.addNotificationReceivedListener(() => {
+      loadUnreadCount();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const loadUnreadCount = async () => {
+    try {
+      const storedNotifications = await AsyncStorage.getItem('notifications');
+      if (storedNotifications) {
+        const notifications = JSON.parse(storedNotifications);
+        const unread = notifications.filter((n: any) => !n.isRead).length;
+        setUnreadCount(unread);
+      }
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
+
   useEffect(() => {
     if (currency === 'USD') {
       // When showing USD, convert savings to USD
@@ -315,7 +353,24 @@ export default function Home() {
     // This effect will run whenever showAllExpenses changes
     // When returning from All Expenses screen (showAllExpenses becomes false)
     // It will ensure the expenses list is up to date
-  }, [showAllExpenses, expenses]);
+    if (!showAllExpenses) {
+      // @ts-ignore
+      navigation.getParent()?.setOptions({
+        tabBarStyle: {
+          backgroundColor: '#1f2630',
+          position: 'absolute',
+          borderTopColor: '#0061FF1A',
+          borderTopWidth: 0.2,
+          minHeight: 70,
+          height: 70,
+          opacity: 1,
+          ...(Platform.OS === 'ios' && {
+            borderTopColor: 'transparent',
+          }),
+        }
+      });
+    }
+  }, [showAllExpenses, expenses, navigation]);
 
   // Add a useEffect to track changes to showDebts
   useEffect(() => {
@@ -323,7 +378,7 @@ export default function Home() {
   }, [showDebts]);
 
   // Clear expenses on initial load for testing
-useEffect(() => {
+  useEffect(() => {
     clearExpenses();
     console.log('Expenses cleared on initial load');
   }, []);
@@ -346,6 +401,9 @@ useEffect(() => {
         minHeight: 70,
         height: 70,
         opacity: 1,
+        ...(Platform.OS === 'ios' && {
+          borderTopColor: 'transparent',
+        }),
       }
     });
 
@@ -360,6 +418,9 @@ useEffect(() => {
           minHeight: 70,
           height: 70,
           opacity: 1,
+          ...(Platform.OS === 'ios' && {
+            borderTopColor: 'transparent',
+          }),
         }
       });
     };
@@ -485,28 +546,40 @@ useEffect(() => {
             className="h-full"
           >
             <View className="px-1">
-              <View className="flex flex-row items-center justify-between mt-12 px-5">
-            <View className="flex flex-row items-center">
+              <View className={`flex flex-row items-center justify-between px-5 ${Platform.OS === 'ios' ? 'mt-4' : 'mt-12'}`}>
+                <View className="flex flex-row items-center">
                   <TouchableOpacity onPress={() => router.push("/profile")}>
                     <Image source={images.avatar} className="rounded-full size-12" />
                   </TouchableOpacity>
-              <View className="flex flex-col ml-2 items-start justify-center">
-                <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
+                  <View className="flex flex-col ml-2 items-start justify-center">
+                    <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
                     <Text className="text-[#fff] text-base font-rubik-medium">{user?.name}</Text>
                   </View>
                 </View>
                 <View className="flex-1 mx-2">
                   <NewsMarquee />
                 </View>
-                <Image source={icons.bell} className="size-6" tintColor={'#7b80ff'}/>
+                <TouchableOpacity 
+                  onPress={() => router.push("/notifications")}
+                  className="relative"
+                >
+                  <Ionicons name="notifications" size={24} color="#7b80ff" />
+                  {unreadCount > 0 && (
+                    <View className="absolute -top-1 -right-1 bg-[#7b80ff] rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                      <Text className="text-white text-[10px] font-rubik">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
 
-        <View className="px-5">
-          <View className="mt-8">
+            <View className="px-5">
+              <View className="mt-8">
                 <Text className="text-[#fff] font-rubik-bold text-md">Monthly Savings</Text>
-            <View className="flex flex-row justify-between mt-1">
-              <View>
+                <View className="flex flex-row justify-between mt-1">
+                  <View>
                     <Text style={[styles.amountText, { fontFamily: 'Barlow-Semibold' }]}>
                       {currency === 'USD' ? `$${changeAmount}` : `₹${savings}`}
                     </Text>
@@ -520,31 +593,31 @@ useEffect(() => {
                         </Text>
                       </View>
                     )}
-              </View>
-              <Dropdown
-                data={currencies}
-                labelField="label"
-                valueField="value"
-                value={currency}
-                onChange={(item) => {
-                  setCurrency(item.value);
-                }}
+                  </View>
+                  <Dropdown
+                    data={currencies}
+                    labelField="label"
+                    valueField="value"
+                    value={currency}
+                    onChange={(item) => {
+                      setCurrency(item.value);
+                    }}
                     selectedTextStyle={{ color: "#fff", fontSize: 16, fontFamily: "Rubik-Medium" }}
                     itemTextStyle={{ color: "#fff", fontSize: 16, fontFamily: "Rubik" }}
                     iconStyle={{ tintColor: "#fff", width: 20, height: 20 }}
-                containerStyle={styles.dropdownContainer} 
-                itemContainerStyle={styles.dropdownItem}
-                style={styles.dropdown}
+                    containerStyle={styles.dropdownContainer} 
+                    itemContainerStyle={styles.dropdownItem}
+                    style={styles.dropdown}
                     activeColor="#343f52"
                     placeholder="Select"
-                />
+                  />
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
 
-        <View>
-          {goal!=null ? <GoalBar/>:""}
-        </View>
+            <View>
+              {goal!=null ? <GoalBar/>:""}
+            </View>
 
             {/* Feature Cards Row */}
             <View className="px-6 mt-6">
@@ -572,8 +645,8 @@ useEffect(() => {
               </View>
             </View>
 
-        <View className="px-6">
-          <View className="flex flex-row items-center justify-around mt-8">
+            <View className="px-6">
+              <View className="flex flex-row items-center justify-around mt-8">
                 <ServiceButton 
                   icon={salaryYearly>0? icons.info:icons.add} 
                   title={salaryYearly > 0 ? "View Salary":"Add Salary"} 
@@ -589,7 +662,7 @@ useEffect(() => {
                   }} 
                   sideText="View All Transaction"
                 />
-          </View>
+              </View>
               <View className="flex flex-row items-center justify-around mt-8">
                 <ServiceButton 
                   icon={icons.goal} 
@@ -603,8 +676,8 @@ useEffect(() => {
                   onPress={() => router.push("/(root)/(tabs)/invest")} 
                   sideText="Investing Q&A"
                 />
-          </View>
-        </View>
+              </View>
+            </View>
 
             {/* Separator line */}
             <View className="border-t border-[#343f52] mx-6 mt-10 mb-0" />
@@ -621,7 +694,7 @@ useEffect(() => {
                     {activeTab === "Expenditures" && (
                       <View className="border-b-2 border-[#7b80ff] mt-1" />
                     )}
-              </TouchableOpacity>
+                  </TouchableOpacity>
                   <TouchableOpacity className="py-2" onPress={() => setActiveTab("Insurance")}>
                     <Text className={`font-rubik-medium text-base ${activeTab === "Insurance" ? "text-[#7b80ff]" : "text-[#9aa0a6]"}`}>
                       Insurance
@@ -629,8 +702,8 @@ useEffect(() => {
                     {activeTab === "Insurance" && (
                       <View className="border-b-2 border-[#7b80ff] mt-1" />
                     )}
-              </TouchableOpacity>
-            </View>
+                  </TouchableOpacity>
+                </View>
                 
                 {/* Add button - only show when salary is added */}
                 {isSalaryInputComplete && activeTab === "Expenditures" && (
@@ -688,8 +761,8 @@ useEffect(() => {
                                 <Text className="text-[#ccc] font-rubik text-xs mt-0.5">
                                   {new Date(expense.date).toLocaleDateString()}
                                 </Text>
-          </View>
-        </View>
+                              </View>
+                            </View>
                             <Text className={expense.type === 'income' 
                               ? "text-[#4CAF50] font-rubik-bold text-base" 
                               : "text-[#FF5252] font-rubik-bold text-base"}>
@@ -722,8 +795,8 @@ useEffect(() => {
                   )
                 ) : renderContent()}
               </View>
-        </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
         )}
       </SafeAreaView>
     )

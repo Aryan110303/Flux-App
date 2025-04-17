@@ -1,50 +1,64 @@
-# Welcome to your Expo app 👋
+# ⚡️ Flux — MVP Energy. Wallet Therapy.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Welcome to **Flux**, the app that pretends to fix your finances — and *kinda* does.  
+It’s an MVP (*Minimal Viable Product*, not *Most Valuable Player*... yet), built with love, late nights, and the hope that someone out there will fund this.
 
-## Get started
+---
 
-1. Install dependencies
+## 💡 What Even Is Flux?
 
-   ```bash
-   npm install
-   ```
+Flux is your friendly, budget-tracking sidekick that helps you figure out where your money is going (spoiler: it’s food, subscriptions, and emotional spending).
 
-2. Start the app
+Right now, it can:
 
-   ```bash
-    npx expo start
-   ```
+- 💰 Track your **income**
+- 🧾 Record your **expenses**
+- 📊 Show you how much you’ve “saved” (even if it’s ₹42. Nice.)
+- 📚 Offer **investment options** like SIPs, FDs, mutual funds, and more (explained like you’re 5)
+- 🧠 Includes a **barebones SmartAI** (don't get excited — it answers simple finance questions. That’s it. It’s learning, okay?)
 
-In the output, you'll find options to open the app in a
+Coming *hopefully soon-ish*:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- 💳 **UPI payments** directly from Flux — no more typing your chai expenses manually  
+- 💸 Automatic expense detection (because manual effort is so 2010)
+- 📲 Notifications that gently yell at you when you overspend
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 🌀 4-Step Master Plan
 
-When you're ready, run:
+Because even MVPs need structure.
+
+1. **Add Salary** – Fake it till you make it.
+2. **Add Expenses** – Be honest, we know you bought that 8th tote bag.
+3. **Get Savings** – Reality check, served cold.
+4. **View Investment Options** – Because stuffing cash in a drawer isn’t a plan.
+
+---
+
+## 🤔 But Is That It?
+
+Well yeah, **Sherlock**, what did you expect from an MVP?  
+A full-blown finance advisor with neural networks and crypto prediction?  
+Flux is still growing — and when someone decides to throw money at this idea, you’ll see it evolve into something way cooler.
+
+Until then… it’s minimalist. Let’s call it **financial minimalism**.
+
+---
+
+## 🔧 Built With
+
+- React + Vite
+- Tailwind CSS + shadcn/ui
+- Framer Motion (for fancy UI shenanigans)
+- Pain and ambition
+
+---
+
+## 📦 Install & Run
 
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+git clone https://github.com/Aryan110303/flux.git
+cd flux
+npm install
+npm run dev

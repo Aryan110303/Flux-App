@@ -10,13 +10,25 @@ import InviteFriends from '../components/InviteFriends';
 import About from '../components/About';
 import { logout } from '@/lib/appwrite';
 import Trends from '@/app/(root)/components/Trends';
+import { useUserContext } from '../context/UserContext';
+import { useExpenses } from '../context/ExpenseContext';
 
 const { width } = Dimensions.get('window');
 
 const Profile = () => {
   const { user } = useGlobalContext();
+  const { savings } = useUserContext();
+  const { expenses } = useExpenses();
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
   const [showTrends, setShowTrends] = useState(false);
+
+  // Calculate total balance from expenses
+  const calculateBalance = () => {
+    return expenses.reduce((total, expense) => {
+      const amount = parseFloat(expense.amount);
+      return expense.type === 'income' ? total + amount : total - amount;
+    }, 0);
+  };
 
   const handleCloseScreen = () => {
     setActiveScreen(null);
@@ -25,7 +37,11 @@ const Profile = () => {
   const renderScreen = () => {
     switch (activeScreen) {
       case 'my-savings':
-        return <MySavings onClose={handleCloseScreen} />;
+        return (
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#1f2630' }}>
+            <MySavings onClose={handleCloseScreen} />
+          </SafeAreaView>
+        );
       case 'payments':
         return <Payments onClose={handleCloseScreen} />;
       case 'download-data':
@@ -98,18 +114,13 @@ const Profile = () => {
               {/* Stats Row */}
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>$12,450</Text>
+                  <Text style={styles.statValue}>₹{calculateBalance().toLocaleString()}</Text>
                   <Text style={styles.statLabel}>Balance</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>$2,150</Text>
+                  <Text style={styles.statValue}>₹{savings.toLocaleString()}</Text>
                   <Text style={styles.statLabel}>Savings</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>$850</Text>
-                  <Text style={styles.statLabel}>Invested</Text>
                 </View>
               </View>
             </View>
@@ -136,11 +147,15 @@ const Profile = () => {
                 </View>
                 <Text style={styles.quickActionText}>Payments</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionButton} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.quickActionButton} 
+                activeOpacity={0.7}
+                onPress={() => setShowTrends(true)}
+              >
                 <View style={styles.quickActionIcon}>
-                  <Text style={styles.quickActionIconText}>⚙️</Text>
+                  <Text style={styles.quickActionIconText}>📈</Text>
                 </View>
-                <Text style={styles.quickActionText}>Settings</Text>
+                <Text style={styles.quickActionText}>Trends</Text>
               </TouchableOpacity>
             </View>
 

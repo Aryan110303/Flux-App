@@ -1,28 +1,24 @@
-import { View, Text, Image, ImageSourcePropType } from 'react-native'
-import React from 'react'
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-interface TabIconProps {
-  focused: boolean;
-  icon: ImageSourcePropType;
-  title: string;
+export interface TabIconProps {
+  name: string;
+  color: string;
+  size: number;
 }
 
-const TabIcon = ({ focused, icon, title }: TabIconProps) => (
-  <View className='flex-1 mt-3 flex flex-col items-center'>
-    <Image 
-      source={icon} 
-      tintColor={focused ? '#7b80ff' : '#666876'} 
-      resizeMode='contain' 
-      className='size-6'
-    />
-    <Text 
-      className={`${
-        focused ? 'font-rubik-medium text-[#7B80FF]' : 'font-rubik text-black-200'
-      } text-xs w-full text-center mt-1`}
-    >
-      {title}
-    </Text>
-  </View>
-)
+export default function TabIcon({ name, color, size }: TabIconProps) {
+  return (
+    <View style={styles.container}>
+      <Ionicons name={name as any} size={size} color={color} />
+    </View>
+  );
+}
 
-export default TabIcon 
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+}); 

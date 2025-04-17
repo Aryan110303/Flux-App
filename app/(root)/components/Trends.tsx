@@ -15,20 +15,37 @@ const Trends = ({ onClose }: TrendsProps) => {
   const { expenses } = useExpenses();
   const { salaryMonthly } = useUserContext();
   const [activeTab, setActiveTab] = useState<'spending' | 'savings'>('spending');
-  const [timeframe, setTimeframe] = useState<'week' | 'month' | 'year'>('month');
+  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
   
   // Calculate spending by category
   const getSpendingByCategory = () => {
     const categoryTotals: Record<string, number> = {};
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (timeframe) {
+      case 'day':
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case 'week':
+        startDate = new Date(now.setDate(now.getDate() - now.getDay()));
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+    }
     
     expenses.forEach(expense => {
-      const category = expense.category || 'Other';
-      const amount = parseFloat(expense.amount);
-      
-      if (categoryTotals[category]) {
-        categoryTotals[category] += amount;
-      } else {
-        categoryTotals[category] = amount;
+      const expenseDate = new Date(expense.date);
+      if (expenseDate >= startDate) {
+        const category = expense.category || 'Other';
+        const amount = parseFloat(expense.amount);
+        
+        if (categoryTotals[category]) {
+          categoryTotals[category] += amount;
+        } else {
+          categoryTotals[category] = amount;
+        }
       }
     });
     
@@ -37,8 +54,27 @@ const Trends = ({ onClose }: TrendsProps) => {
   
   // Calculate total spending
   const getTotalSpending = () => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (timeframe) {
+      case 'day':
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case 'week':
+        startDate = new Date(now.setDate(now.getDate() - now.getDay()));
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+    }
+    
     return expenses.reduce((total, expense) => {
-      return total + parseFloat(expense.amount);
+      const expenseDate = new Date(expense.date);
+      if (expenseDate >= startDate) {
+        return total + parseFloat(expense.amount);
+      }
+      return total;
     }, 0);
   };
   
@@ -87,15 +123,70 @@ const Trends = ({ onClose }: TrendsProps) => {
     }));
   };
   
-  // Prepare data for line chart (mock data for now)
+  // Prepare data for line chart
   const getLineChartData = () => {
+    const now = new Date();
+    let labels: string[] = [];
+    let data: number[] = [];
+    
+    switch (timeframe) {
+      case 'day':
+        // Show hourly data for the day with AM/PM format, but only every 3 hours
+        labels = Array.from({ length: 24 }, (_, i) => {
+          if (i % 3 === 0) { // Only show every 3 hours
+            const hour = i % 12 || 12; // Convert 0 to 12, 1-11 stay the same
+            const period = i < 12 ? 'AM' : 'PM';
+            return `${hour}${period}`;
+          }
+          return '';
+        });
+        data = Array(24).fill(0);
+        const today = new Date(now.setHours(0, 0, 0, 0));
+        expenses.forEach(expense => {
+          const expenseDate = new Date(expense.date);
+          if (expenseDate >= today && 
+              expenseDate.getDate() === today.getDate() && 
+              expenseDate.getMonth() === today.getMonth() && 
+              expenseDate.getFullYear() === today.getFullYear()) {
+            const hour = expenseDate.getHours();
+            data[hour] += parseFloat(expense.amount);
+          }
+        });
+        break;
+        
+      case 'week':
+        // Show daily data for the week
+        labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        data = Array(7).fill(0);
+        const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+        expenses.forEach(expense => {
+          const expenseDate = new Date(expense.date);
+          if (expenseDate >= weekStart) {
+            const day = expenseDate.getDay();
+            data[day] += parseFloat(expense.amount);
+          }
+        });
+        break;
+        
+      case 'month':
+        // Show daily data for the month
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+        data = Array(daysInMonth).fill(0);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        expenses.forEach(expense => {
+          const expenseDate = new Date(expense.date);
+          if (expenseDate >= monthStart && expenseDate.getMonth() === now.getMonth()) {
+            const day = expenseDate.getDate() - 1;
+            data[day] += parseFloat(expense.amount);
+          }
+        });
+        break;
+    }
+    
     return {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [
-        {
-          data: [2000, 2500, 1800, 2200, 3000, 2800],
-        },
-      ],
+      labels,
+      datasets: [{ data }],
     };
   };
   
@@ -143,8 +234,18 @@ const Trends = ({ onClose }: TrendsProps) => {
       </View>
       
       {/* Timeframe Selector */}
-      <View className="px-6 py-2">
+      <View className="px-6 py-4">
         <View className="flex-row justify-between gap-2">
+          <TouchableOpacity 
+            className={`py-2 px-3 rounded-full flex-1 items-center ${timeframe === "day" ? "bg-[#3E4D67]" : "bg-[#2A3441]"}`}
+            onPress={() => setTimeframe("day")}
+          >
+            <Text 
+              className={`font-rubik text-sm ${timeframe === "day" ? "text-white" : "text-[#9aa0a6]"}`}
+            >
+              Day
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity 
             className={`py-2 px-3 rounded-full flex-1 items-center ${timeframe === "week" ? "bg-[#3E4D67]" : "bg-[#2A3441]"}`}
             onPress={() => setTimeframe("week")}
@@ -163,16 +264,6 @@ const Trends = ({ onClose }: TrendsProps) => {
               className={`font-rubik text-sm ${timeframe === "month" ? "text-white" : "text-[#9aa0a6]"}`}
             >
               Month
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className={`py-2 px-3 rounded-full flex-1 items-center ${timeframe === "year" ? "bg-[#3E4D67]" : "bg-[#2A3441]"}`}
-            onPress={() => setTimeframe("year")}
-          >
-            <Text 
-              className={`font-rubik text-sm ${timeframe === "year" ? "text-white" : "text-[#9aa0a6]"}`}
-            >
-              Year
             </Text>
           </TouchableOpacity>
         </View>
@@ -241,12 +332,28 @@ const Trends = ({ onClose }: TrendsProps) => {
                   style: {
                     borderRadius: 16,
                   },
+                  propsForLabels: {
+                    fontSize: 11,
+                    rotation: 0,
+                    dx: timeframe === 'day' ? 5 : 0,
+                  },
+                  propsForDots: {
+                    r: 3,
+                  },
                 }}
                 bezier
                 style={{
                   marginVertical: 8,
                   borderRadius: 16,
                 }}
+                withDots={true}
+                withInnerLines={true}
+                withOuterLines={true}
+                withVerticalLines={false}
+                withHorizontalLines={true}
+                segments={4}
+                fromZero={true}
+                formatYLabel={(value) => `₹${Math.round(Number(value))}`}
               />
             </View>
             

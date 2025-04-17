@@ -186,8 +186,13 @@ import {
           <KeyboardAvoidingView 
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={{ flex: 1 }}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
           >
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <ScrollView 
+              contentContainerStyle={styles.scrollContainer}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.header}>
                 <TouchableOpacity className="size-5">
                     <Image source={icons.info}/>

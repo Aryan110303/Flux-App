@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1f2630',
-    marginTop: 30,
+    marginTop: Platform.OS === 'ios' ? 20 : 30,
   },
   header: {
     flexDirection: 'row',
