@@ -358,27 +358,54 @@ const Trends = ({ onClose }: TrendsProps) => {
             </View>
             
             {/* Category Breakdown */}
-            <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
-              <Text className="text-white font-rubik-bold text-lg mb-4">Category Breakdown</Text>
-              
-              {Object.entries(getSpendingByCategory()).map(([category, amount], index) => (
-                <View key={index} className="flex-row justify-between items-center py-3 border-b border-[#4a5a7a]">
-                  <View className="flex-row items-center">
-                    <View 
-                      style={{ 
-                        width: 12, 
-                        height: 12, 
-                        borderRadius: 6, 
-                        backgroundColor: pieChartData[index % pieChartData.length]?.color || '#7b80ff',
-                        marginRight: 10
-                      }} 
-                    />
-                    <Text className="text-white font-rubik-medium">{category}</Text>
+            {timeframe !== 'week' && (
+              <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
+                <Text className="text-white font-rubik-bold text-lg mb-4">Category Breakdown</Text>
+                
+                {Object.entries(getSpendingByCategory()).map(([category, amount], index) => (
+                  <View key={index} className="flex-row justify-between items-center py-3 border-b border-[#4a5a7a]">
+                    <View className="flex-row items-center">
+                      <View 
+                        style={{ 
+                          width: 12, 
+                          height: 12, 
+                          borderRadius: 6, 
+                          backgroundColor: pieChartData[index % pieChartData.length]?.color || '#7b80ff',
+                          marginRight: 10
+                        }} 
+                      />
+                      <Text className="text-white font-rubik-medium">{category}</Text>
+                    </View>
+                    <Text className="text-white font-rubik">₹{amount.toLocaleString()}</Text>
                   </View>
-                  <Text className="text-white font-rubik">₹{amount.toLocaleString()}</Text>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
+
+            {/* Daily Breakdown for Week */}
+            {timeframe === 'week' && (
+              <View className="bg-[#3E4D67] p-6 rounded-xl mb-6">
+                <Text className="text-white font-rubik-bold text-lg mb-4">Daily Breakdown</Text>
+                
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => {
+                  const dayExpenses = expenses.filter(expense => {
+                    const expenseDate = new Date(expense.date);
+                    return expenseDate.getDay() === index;
+                  });
+                  
+                  const dayTotal = dayExpenses.reduce((total, expense) => {
+                    return total + parseFloat(expense.amount);
+                  }, 0);
+                  
+                  return (
+                    <View key={index} className="flex-row justify-between items-center py-3 border-b border-[#4a5a7a]">
+                      <Text className="text-white font-rubik-medium">{day}</Text>
+                      <Text className="text-white font-rubik">₹{dayTotal.toLocaleString()}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </>
         ) : (
           <>

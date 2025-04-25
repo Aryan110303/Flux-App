@@ -4,6 +4,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Switch, ScrollView, Dimensions, Modal, SafeAreaView } from "react-native";
 import { useUserContext, RecurrenceType } from '../context/UserContext';
 import { useNavigation } from 'expo-router';
+import { useGlobalContext } from "@/lib/global-provider";
 
 interface NumberType {
   isVisible: boolean;
@@ -25,6 +26,7 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
   const [currentView, setCurrentView] = useState<'keypad' | 'recurrence'>('keypad');
   const navigation = useNavigation();
   const { height, width } = Dimensions.get('window');
+  const { user } = useGlobalContext();
 
   useEffect(() => {
     if (isVisible) {
@@ -204,7 +206,15 @@ const InputNumberMonthly = ({ isVisible, onClose, onComplete }: NumberType) => {
                 : "Income Settings"}
             </Text>
             <TouchableOpacity style={styles.avatarContainer}>
-              <Image source={images.avatar} style={styles.avatar} />
+              {user?.avatar ? (
+                <Image 
+                  source={{ uri: user.avatar }} 
+                  style={styles.avatar}
+                  defaultSource={images.avatar}
+                />
+              ) : (
+                <Image source={images.avatar} style={styles.avatar} />
+              )}
             </TouchableOpacity>
           </View>
 

@@ -4,6 +4,7 @@ import React, {useState, useRef, useEffect} from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Animated, Dimensions, Modal, SafeAreaView } from "react-native";
 import { useUserContext } from '../context/UserContext';
 import { useNavigation } from 'expo-router';
+import { useGlobalContext } from "@/lib/global-provider";
 
 interface NumberType{
     isVisible: boolean
@@ -14,6 +15,7 @@ interface NumberType{
 const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
   const navigation = useNavigation();
   const { salaryYearly, setSalaryYearly } = useUserContext();
+  const { user } = useGlobalContext();
   const [localSalary, setLocalSalary] = useState(salaryYearly.toString());
   const translateY = useRef(new Animated.Value(800)).current;
   const { height, width } = Dimensions.get('window');
@@ -119,7 +121,15 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{salaryYearly > 0 ? "Edit Salary" : "Add Salary"}</Text>
             <TouchableOpacity style={styles.avatarContainer}>
-              <Image source={images.avatar} style={styles.avatar} />
+              {user?.avatar ? (
+                <Image 
+                  source={{ uri: user.avatar }} 
+                  style={styles.avatar}
+                  defaultSource={images.avatar}
+                />
+              ) : (
+                <Image source={images.avatar} style={styles.avatar} />
+              )}
             </TouchableOpacity>
           </View>
 

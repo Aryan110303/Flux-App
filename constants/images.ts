@@ -8,10 +8,12 @@ import whiteGradient from "@/assets/images/white-gradient.png";
 import map from "@/assets/images/map.png";
 import noResult from "@/assets/images/no-result.png";
 import icon from "@/assets/images/icon.png";
+import startpic from "@/assets/images/startpic.png";
 
 export default {
   icon,
   onboarding,
+  startpic,
   avatar,
   newYork,
   japan,

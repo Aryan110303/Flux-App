@@ -24,18 +24,18 @@ const SignIn = () => {
     }
 
   return (
-    <SafeAreaView className='bg-white h-full'>
+    <SafeAreaView className='bg-main h-full'>
       <ScrollView contentContainerClassName='h-full'>
-        <Image source={images.onboarding} className='w-full h-4/6' resizeMode='contain'/>
+        <Image source={images.startpic} className='w-full h-4/6' resizeMode='contain'/>
         <View className=' px-10'>
-            <Text className='text-base font-rubik text-center uppercase text-black-200'>
+            <Text className='text-base font-rubik text-center uppercase text-white'>
                 Welcome to Flux
             </Text>
-            <Text className='text-3xl font-rubik-bold text-center mt-2 text-black-300'>
+            <Text className='text-3xl font-rubik-bold text-center mt-2 text-white'>
                 Let's Get You Closer To {"\n"}
-                <Text className="text-primary-300">Your Goals</Text>
+                <Text className="text-[#7b80ff]">Your Goals</Text>
             </Text>
-            <Text className='text-lg text-center font-rubik mt-12 text-black-200'>
+            <Text className='text-lg text-center font-rubik mt-12 text-white'>
                 Login to Flux with Google
             </Text>
             <TouchableOpacity onPress={handleLogin} className='bg-white py-4 w-full shadow-md shadow-zinc-300 mt-5 rounded-full'>

@@ -549,11 +549,22 @@ export default function Home() {
               <View className={`flex flex-row items-center justify-between px-5 ${Platform.OS === 'ios' ? 'mt-4' : 'mt-12'}`}>
                 <View className="flex flex-row items-center">
                   <TouchableOpacity onPress={() => router.push("/profile")}>
-                    <Image source={images.avatar} className="rounded-full size-12" />
+                    {user?.avatar ? (
+                      <Image 
+                        source={{ uri: user.avatar }} 
+                        className="rounded-full size-12"
+                        defaultSource={images.avatar}
+                      />
+                    ) : (
+                      <Image 
+                        source={images.avatar} 
+                        className="rounded-full size-12" 
+                      />
+                    )}
                   </TouchableOpacity>
                   <View className="flex flex-col ml-2 items-start justify-center">
                     <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
-                    <Text className="text-[#fff] text-base font-rubik-medium">{user?.name}</Text>
+                    <Text className="text-[#fff] text-base font-rubik-medium">{user?.name || 'User'}</Text>
                   </View>
                 </View>
                 <View className="flex-1 mx-2">
@@ -639,7 +650,7 @@ export default function Home() {
                     console.log('Savings button pressed via ServiceButton');
                     setShowSavings(true);
                   }}
-                  sideText="Track your savings"
+                  sideText="Existing Savings"
                   textStyle="mx-auto"
                 />
               </View>

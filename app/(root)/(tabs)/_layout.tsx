@@ -38,6 +38,13 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#7b80ff',
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
         headerShown: false,
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: 4,
+        },
       }}
     >
       <Tabs.Screen

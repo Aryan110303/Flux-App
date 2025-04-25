@@ -3,7 +3,7 @@ import "./global.css";
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { GlobalProvider } from "@/lib/global-provider";
+import { GlobalProvider, useGlobalContext } from "@/lib/global-provider";
 import { StatusBar } from "expo-status-bar";
 import { UserProvider } from './(root)/context/UserContext'
 import { ExpenseProvider } from './(root)/context/ExpenseContext'
@@ -11,6 +11,25 @@ import { ToastProvider } from './(root)/context/ToastContext'
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet } from "react-native";
 import { DebtProvider } from './(root)/context/DebtContext'
+import DevTools from './(root)/components/DevTools'
+
+function AppContent() {
+  const { user } = useGlobalContext();
+
+  return (
+    <ToastProvider>
+      <UserProvider userId={user?.$id}>
+        <ExpenseProvider userId={user?.$id}>
+          <DebtProvider>
+            <StatusBar style="light" backgroundColor="#1f2630" />
+            <Stack screenOptions={{headerShown: false}} />
+            <DevTools />
+          </DebtProvider>
+        </ExpenseProvider>
+      </UserProvider>
+    </ToastProvider>
+  );
+}
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
@@ -37,18 +56,9 @@ export default function RootLayout() {
 
   return(
     <GestureHandlerRootView style={styles.container}>
-      <ToastProvider>
-        <UserProvider>
-          <ExpenseProvider>
-            <DebtProvider>
-              <GlobalProvider>
-                <StatusBar style="light" backgroundColor="#1f2630" />
-                <Stack screenOptions={{headerShown: false}} />
-              </GlobalProvider>
-            </DebtProvider>
-          </ExpenseProvider>
-        </UserProvider>
-      </ToastProvider>
+      <GlobalProvider>
+        <AppContent />
+      </GlobalProvider>
     </GestureHandlerRootView>
   )
 }

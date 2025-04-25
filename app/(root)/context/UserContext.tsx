@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Development mode flag - set this to true during development
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+
+// Flag to control whether to clear storage on app start in development
+const CLEAR_ON_START = false; // Set this to true only when you want to clear data
+
+const STORAGE_KEY = 'user_data';
 
 export type RecurrenceType = 'none' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
@@ -24,16 +33,19 @@ export interface UserContextType {
   lastSalaryReceived: Date | null;
   setLastSalaryReceived: (date: Date | null) => void;
   addSalaryToSavings: () => void;
+  resetStorage: () => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
 
-interface SalaryType {
+interface UserProviderProps {
   children: React.ReactNode;
+  userId?: string;
 }
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
+export const UserProvider: React.FC<UserProviderProps> = ({
   children,
+  userId,
 }) => {
   const [salaryYearly, setSalaryYearly] = useState(0);
   const [salaryMonthly, setSalaryMonthly] = useState("0");
@@ -42,9 +54,115 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [existingSavings, setExistingSavings] = useState(0);
   const [goalAmount, setGoalAmount] = useState(0);
   const [isSalaryInputComplete, setIsSalaryInputComplete] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(true); // Default to true as most incomes are recurring
-  const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceType>('monthly'); // Default to monthly
+  const [isRecurring, setIsRecurring] = useState(true);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceType>('monthly');
   const [lastSalaryReceived, setLastSalaryReceived] = useState<Date | null>(null);
+  const [userStorageKey, setUserStorageKey] = useState(STORAGE_KEY);
+  const [isLoading, setIsLoading] = useState(true);
+  const [previousUserId, setPreviousUserId] = useState<string | undefined>(undefined);
+
+  // Load user data when userId changes
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      const newStorageKey = `${STORAGE_KEY}_${userId}`;
+      setUserStorageKey(newStorageKey);
+
+      // If userId has changed, reset state
+      if (previousUserId !== userId) {
+        setSalaryYearly(0);
+        setSalaryMonthly("0");
+        setGoal(null);
+        setSavings(0);
+        setExistingSavings(0);
+        setGoalAmount(0);
+        setIsSalaryInputComplete(false);
+        setIsRecurring(true);
+        setRecurrenceFrequency('monthly');
+        setLastSalaryReceived(null);
+        setPreviousUserId(userId);
+      }
+
+      try {
+        const storedData = await AsyncStorage.getItem(newStorageKey);
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          console.log('[UserContext] Loading user data for userId:', userId);
+          
+          // Update all state values from stored data
+          setSalaryYearly(parsedData.salaryYearly || 0);
+          setSalaryMonthly(parsedData.salaryMonthly || "0");
+          setGoal(parsedData.goal || null);
+          setSavings(parsedData.savings || 0);
+          setExistingSavings(parsedData.existingSavings || 0);
+          setGoalAmount(parsedData.goalAmount || 0);
+          setIsSalaryInputComplete(parsedData.isSalaryInputComplete || false);
+          setIsRecurring(parsedData.isRecurring ?? true);
+          setRecurrenceFrequency(parsedData.recurrenceFrequency || 'monthly');
+          setLastSalaryReceived(parsedData.lastSalaryReceived ? new Date(parsedData.lastSalaryReceived) : null);
+        }
+      } catch (error) {
+        console.error('[UserContext] Error loading user data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    setIsLoading(true);
+    loadUserData();
+  }, [userId, previousUserId]);
+
+  // Save user data whenever it changes
+  useEffect(() => {
+    if (isLoading) return; // Don't save while loading
+
+    const saveUserData = async () => {
+      if (!userId) {
+        console.log('No userId provided, skipping data save');
+        return;
+      }
+
+      try {
+        const userData = {
+          salaryYearly,
+          salaryMonthly,
+          goal,
+          savings,
+          existingSavings,
+          goalAmount,
+          isSalaryInputComplete,
+          isRecurring,
+          recurrenceFrequency,
+          lastSalaryReceived: lastSalaryReceived?.toISOString() || null,
+        };
+        
+        await AsyncStorage.setItem(userStorageKey, JSON.stringify(userData));
+        console.log('Saved user data for userId:', userId, userData);
+      } catch (error) {
+        console.error('Error saving user data:', error);
+      }
+    };
+
+    saveUserData();
+  }, [
+    userId,
+    salaryYearly,
+    salaryMonthly,
+    goal,
+    savings,
+    existingSavings,
+    goalAmount,
+    isSalaryInputComplete,
+    isRecurring,
+    recurrenceFrequency,
+    lastSalaryReceived,
+    userStorageKey,
+    isLoading,
+  ]);
 
   // Function to add monthly salary to savings
   const addSalaryToSavings = () => {
@@ -53,6 +171,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!isNaN(monthlySalaryAmount)) {
         setSavings(prevSavings => prevSavings + monthlySalaryAmount);
         setLastSalaryReceived(new Date());
+      }
+    }
+  };
+
+  // Function to reset all user data
+  const resetStorage = async () => {
+    if (IS_DEVELOPMENT) {
+      try {
+        // Reset all state values
+        setSalaryYearly(0);
+        setSalaryMonthly("0");
+        setGoal(null);
+        setSavings(0);
+        setExistingSavings(0);
+        setGoalAmount(0);
+        setIsSalaryInputComplete(false);
+        setIsRecurring(true);
+        setRecurrenceFrequency('monthly');
+        setLastSalaryReceived(null);
+        
+        // Clear AsyncStorage
+        await AsyncStorage.removeItem(userStorageKey);
+        console.log('Cleared all user data from storage');
+      } catch (error) {
+        console.error('Failed to clear user data from storage:', error);
       }
     }
   };
@@ -80,7 +223,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setRecurrenceFrequency,
         lastSalaryReceived,
         setLastSalaryReceived,
-        addSalaryToSavings
+        addSalaryToSavings,
+        resetStorage
       }}
     >
       {children}
@@ -88,12 +232,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export default UserProvider;
-
 export const useUserContext = () => {
   const context = useContext(UserContext);
   if (!context) {
-    throw new Error('useUserContext must be used within a UserProvider');
+    throw new Error("useUserContext must be used within a UserProvider");
   }
   return context;
 };
+
+export default UserProvider;

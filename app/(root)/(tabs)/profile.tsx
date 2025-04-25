@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, StyleSheet, Dimensions, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, StyleSheet, Dimensions, Platform, StatusBar, ActivityIndicator } from 'react-native';
 import { useGlobalContext } from '@/lib/global-provider';
 import { settings } from '@/constants/data';
 import MySavings from '../components/MySavings';
@@ -12,26 +12,75 @@ import { logout } from '@/lib/appwrite';
 import Trends from '@/app/(root)/components/Trends';
 import { useUserContext } from '../context/UserContext';
 import { useExpenses } from '../context/ExpenseContext';
+import * as ImagePicker from 'expo-image-picker';
+import { updateUser } from '@/lib/appwrite';
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get('window');                     
 
 const Profile = () => {
-  const { user } = useGlobalContext();
+  const { user, setUser, logout: globalLogout } = useGlobalContext();
   const { savings } = useUserContext();
   const { expenses } = useExpenses();
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
   const [showTrends, setShowTrends] = useState(false);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
 
-  // Calculate total balance from expenses
-  const calculateBalance = () => {
+  // Calculate total expenditure from expenses
+  const calculateTotalExpenditure = () => {
     return expenses.reduce((total, expense) => {
       const amount = parseFloat(expense.amount);
-      return expense.type === 'income' ? total + amount : total - amount;
+      return expense.type === 'expense' ? total + amount : total;
     }, 0);
   };
 
   const handleCloseScreen = () => {
     setActiveScreen(null);
+  };
+
+  const pickImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setIsUpdatingAvatar(true);
+        
+        // Update user avatar in Appwrite
+        const updatedUser = await updateUser({
+          ...user,
+          avatar: result.assets[0].uri
+        });
+
+        // Update global context
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      alert('Failed to update profile picture. Please try again.');
+    } finally {
+      setIsUpdatingAvatar(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      await globalLogout();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const renderScreen = () => {
@@ -89,7 +138,7 @@ const Profile = () => {
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Profile</Text>
               <TouchableOpacity 
-                onPress={logout}
+                onPress={handleLogout}
                 style={styles.logoutButton}
                 activeOpacity={0.7}
               >
@@ -104,8 +153,17 @@ const Profile = () => {
                   source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
                   style={styles.avatar}
                 />
-                <TouchableOpacity style={styles.editAvatarButton} activeOpacity={0.7}>
-                  <Text style={styles.editAvatarText}>✎</Text>
+                <TouchableOpacity 
+                  style={styles.editAvatarButton} 
+                  activeOpacity={0.7}
+                  onPress={pickImage}
+                  disabled={isUpdatingAvatar}
+                >
+                  {isUpdatingAvatar ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.editAvatarText}>✎</Text>
+                  )}
                 </TouchableOpacity>
               </View>
               <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
@@ -114,8 +172,8 @@ const Profile = () => {
               {/* Stats Row */}
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>₹{calculateBalance().toLocaleString()}</Text>
-                  <Text style={styles.statLabel}>Balance</Text>
+                  <Text style={styles.statValue}>₹{calculateTotalExpenditure().toLocaleString()}</Text>
+                  <Text style={styles.statLabel}>Total Expense</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>

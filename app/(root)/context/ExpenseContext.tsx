@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define TypeScript types
@@ -17,7 +17,16 @@ type ExpenseContextType = {
   deleteExpense: (id: number) => void;
   updateExpense: (id: number, updatedExpense: Expense) => void;
   clearExpenses: () => void;
+  resetStorage: () => void;
+  reloadExpenses: () => Promise<void>;
+  handleLogout: () => Promise<void>;
 };
+
+// Development mode flag - set this to true during development
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+
+// Flag to control whether to clear storage on app start in development
+const CLEAR_ON_START = false; // Set this to true only when you want to clear data
 
 const STORAGE_KEY = 'expenses_data';
 
@@ -36,96 +45,166 @@ export const useExpenses = () => {
 };
 
 // Provider component
-export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({
+export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: string }> = ({
   children,
+  userId,
 }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  
-  // Load expenses from storage on mount
+  const [storageKey, setStorageKey] = useState(STORAGE_KEY);
+  const [isLoading, setIsLoading] = useState(true);
+  const [previousUserId, setPreviousUserId] = useState<string | undefined>(undefined);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Load expenses when userId changes
   useEffect(() => {
     const loadExpenses = async () => {
+      if (!userId) {
+        if (!isLoggingOut) {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const newStorageKey = `${STORAGE_KEY}_${userId}`;
+      setStorageKey(newStorageKey);
+
+      // If userId has changed and we're not logging out, reset state
+      if (previousUserId !== userId && !isLoggingOut) {
+        setExpenses([]);
+        setPreviousUserId(userId);
+      }
+
       try {
-        // For development, uncomment this line to clear expenses on each app start
-        // await AsyncStorage.removeItem(STORAGE_KEY);
+        // First try to load from temporary storage (if restored from logout)
+        const tempKey = `temp_expenses_${userId}`;
+        const tempExpenses = await AsyncStorage.getItem(tempKey);
         
-        const storedExpenses = await AsyncStorage.getItem(STORAGE_KEY);
-        if (storedExpenses) {
-          // Handle migration for existing expenses that don't have a type field
-          const parsedExpenses = JSON.parse(storedExpenses);
+        if (tempExpenses) {
+          // If we found temporary expenses, restore them to the main storage
+          await AsyncStorage.setItem(newStorageKey, tempExpenses);
+          await AsyncStorage.removeItem(tempKey);
+          console.log('[ExpenseContext] Restored expenses from temporary storage for userId:', userId);
+          
+          const parsedExpenses = JSON.parse(tempExpenses);
           const migratedExpenses = parsedExpenses.map((exp: any) => ({
             ...exp,
-            type: exp.type || 'expense' // Set default type for existing expenses
+            type: exp.type || 'expense',
+            date: exp.date || new Date().toISOString(),
+            category: exp.category || 'uncategorized'
           }));
           setExpenses(migratedExpenses);
-          console.log('Loaded expenses from storage:', migratedExpenses);
+        } else {
+          // Otherwise load from regular storage
+          const storedExpenses = await AsyncStorage.getItem(newStorageKey);
+          if (storedExpenses) {
+            const parsedExpenses = JSON.parse(storedExpenses);
+            console.log('[ExpenseContext] Loading expenses for userId:', userId);
+            
+            const migratedExpenses = parsedExpenses.map((exp: any) => ({
+              ...exp,
+              type: exp.type || 'expense',
+              date: exp.date || new Date().toISOString(),
+              category: exp.category || 'uncategorized'
+            }));
+            setExpenses(migratedExpenses);
+          }
         }
       } catch (error) {
-        console.error('Failed to load expenses from storage:', error);
+        console.error('[ExpenseContext] Error loading expenses:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
+    setIsLoading(true);
     loadExpenses();
-  }, []);
-  
-  // Save expenses to storage whenever they change
+  }, [userId, previousUserId, isLoggingOut]);
+
+  // Save expenses whenever they change
   useEffect(() => {
+    if (isLoading) return; // Don't save while loading
+
     const saveExpenses = async () => {
+      if (!userId) {
+        if (!isLoggingOut) {
+          console.log('[ExpenseContext] No userId provided, skipping data save');
+        }
+        return;
+      }
+
       try {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-        console.log('Saved expenses to storage:', expenses);
+        await AsyncStorage.setItem(storageKey, JSON.stringify(expenses));
+        console.log('[ExpenseContext] Saved expenses for userId:', userId);
       } catch (error) {
-        console.error('Failed to save expenses to storage:', error);
+        console.error('[ExpenseContext] Error saving expenses:', error);
       }
     };
-    
-    if (expenses.length > 0) {
-      saveExpenses();
-    }
-  }, [expenses]);
 
-  // Function to add an expense
-  const addExpense = useCallback((expense: Expense) => {
-    console.log('Adding expense to context:', expense);
-    setExpenses((prev) => {
-      const newExpenses = [expense, ...prev];
-      console.log('Updated expenses array:', newExpenses);
-      return newExpenses;
-    });
-  }, []);
+    saveExpenses();
+  }, [expenses, userId, storageKey, isLoading, isLoggingOut]);
 
-  // Function to delete an expense
-  const deleteExpense = useCallback((id: number) => {
-    console.log('Deleting expense with id:', id);
-    setExpenses((prev) => {
-      const newExpenses = prev.filter((expense) => expense.id !== id);
-      console.log('Updated expenses array after delete:', newExpenses);
-      return newExpenses;
-    });
-  }, []);
+  const addExpense = (expense: Expense) => {
+    setExpenses(prev => [expense, ...prev]);
+  };
 
-  // Function to update an expense
-  const updateExpense = useCallback((id: number, updatedExpense: Expense) => {
-    console.log('Updating expense:', updatedExpense);
-    setExpenses((prev) => {
-      const newExpenses = prev.map((expense) => 
-        expense.id === id ? updatedExpense : expense
-      );
-      console.log('Updated expenses array after update:', newExpenses);
-      return newExpenses;
-    });
-  }, []);
+  const deleteExpense = (id: number) => {
+    setExpenses(prev => prev.filter(expense => expense.id !== id));
+  };
 
-  // Function to clear all expenses
-  const clearExpenses = useCallback(async () => {
-    console.log('Clearing all expenses');
+  const updateExpense = (id: number, updatedExpense: Expense) => {
+    setExpenses(prev => prev.map(expense => 
+      expense.id === id ? updatedExpense : expense
+    ));
+  };
+
+  const clearExpenses = async () => {
+    if (!userId || isLoggingOut) return;
     setExpenses([]);
     try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      console.log('Expenses cleared from storage');
+      await AsyncStorage.removeItem(storageKey);
+      console.log('[ExpenseContext] Cleared expenses for userId:', userId);
     } catch (error) {
-      console.error('Failed to clear expenses from storage:', error);
+      console.error('[ExpenseContext] Error clearing expenses:', error);
     }
-  }, []);
+  };
+
+  const reloadExpenses = async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const storedExpenses = await AsyncStorage.getItem(storageKey);
+      if (storedExpenses) {
+        const parsedExpenses = JSON.parse(storedExpenses);
+        const migratedExpenses = parsedExpenses.map((exp: any) => ({
+          ...exp,
+          type: exp.type || 'expense',
+          date: exp.date || new Date().toISOString(),
+          category: exp.category || 'uncategorized'
+        }));
+        setExpenses(migratedExpenses);
+      }
+    } catch (error) {
+      console.error('[ExpenseContext] Error reloading expenses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to handle logout
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      // Save current expenses before logout
+      if (userId) {
+        await AsyncStorage.setItem(storageKey, JSON.stringify(expenses));
+        console.log('[ExpenseContext] Saved expenses before logout for userId:', userId);
+      }
+    } catch (error) {
+      console.error('[ExpenseContext] Error saving expenses during logout:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const value = {
     expenses,
@@ -133,6 +212,9 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({
     deleteExpense,
     updateExpense,
     clearExpenses,
+    resetStorage: clearExpenses,
+    reloadExpenses,
+    handleLogout,
   };
 
   return (
