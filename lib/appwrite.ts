@@ -24,157 +24,190 @@ client
 export const avatar = new Avatars(client)
 export const account = new Account(client)
 
+export async function checkSession() {
+    try {
+        const session = await account.getSession('current');
+        if (session) {
+            // Set the session in the client
+            client.setJWT(session.providerAccessToken);
+            
+            const user = await account.get();
+            if (user) {
+                console.log('[Appwrite] Found valid session for user:', user.$id);
+                return true;
+            }
+        }
+        return false;
+    } catch (error) {
+        console.log('[Appwrite] No active session');
+        return false;
+    }
+}
+
 export async function login() {
     try {
+        // Clear only session-related data before login
+        const keysToClear = [
+            'appwrite_session',
+            'appwrite_user',
+            'appwrite_prefs',
+            'appwrite_account',
+            'appwrite_team',
+            'appwrite_membership'
+        ];
+
+        for (const key of keysToClear) {
+            try {
+                await AsyncStorage.removeItem(key);
+            } catch (error) {
+                console.log(`[Appwrite] Error clearing ${key}:`, error);
+            }
+        }
+
+        // Reset client state
+        client.setJWT('');
+
+        // Proceed with OAuth login
         const redirectUri = Linking.createURL('/');
         const response = await account.createOAuth2Token(
             OAuthProvider.Google,
             redirectUri
-        )
-        if(!response) throw new Error('Failed to Login');
+        );
+        
+        if(!response) throw new Error('Failed to create OAuth token');
         
         const browserResult = await openAuthSessionAsync(
             response.toString(),
             redirectUri
-        )
+        );
         
-        if(browserResult.type != 'success') throw new Error('Failed to Login');
+        if(browserResult.type !== 'success') throw new Error('Failed to complete OAuth flow');
 
-        const url = new URL(browserResult.url)
+        const url = new URL(browserResult.url);
+        const secret = url.searchParams.get('secret')?.toString();
+        const userId = url.searchParams.get('userId')?.toString();
 
-        const secret = url.searchParams.get('secret')?.toString()
-        const userId = url.searchParams.get('userId')?.toString()
-
-        if(!secret || !userId) throw new Error('Failed to Login');
+        if(!secret || !userId) throw new Error('Missing OAuth credentials');
         
-        const session = await account.createSession(userId, secret)
-        
-        if(!session) throw new Error('Failed to create a Session');
+        // Create new session
+        const session = await account.createSession(userId, secret);
+        if(!session) throw new Error('Failed to create session');
 
-        return true;
+        // Set the JWT token immediately after session creation
+        client.setJWT(session.providerAccessToken);
 
+        // Wait a moment for the session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-    }catch(error){
-        console.error(error)
-        return false
+        // Verify the session is valid by getting the user
+        try {
+            const user = await account.get();
+            if (!user) {
+                throw new Error('Failed to verify session');
+            }
+            console.log('[Appwrite] Successfully verified session for user:', userId);
+            return true;
+        } catch (error) {
+            console.error('[Appwrite] Error verifying session:', error);
+            return false;
+        }
+    } catch(error) {
+        console.error('[Appwrite] Login error:', error);
+        return false;
     }
-    
 }
 
 export const logout = async () => {
     try {
-        // Get current user ID before starting logout process
+        console.log('[Appwrite] Starting logout process');
+        
+        // Get current user ID before starting logout
         const currentUser = await getCurrentUser();
         const currentUserId = currentUser?.$id;
-
-        if (currentUserId) {
-            // Save current expenses before logout
-            const expensesKey = `expenses_data_${currentUserId}`;
-            const currentExpenses = await AsyncStorage.getItem(expensesKey);
-            if (currentExpenses) {
-                // Save to a temporary key that won't be cleared
-                await AsyncStorage.setItem(`temp_expenses_${currentUserId}`, currentExpenses);
-                console.log('[Appwrite] Preserved expenses for user:', currentUserId);
-            }
-
-            // Save profile picture before logout
-            const profileKey = `profile_${currentUserId}`;
-            const currentProfile = await AsyncStorage.getItem(profileKey);
-            if (currentProfile) {
-                // Save to a temporary key that won't be cleared
-                await AsyncStorage.setItem(`temp_profile_${currentUserId}`, currentProfile);
-                console.log('[Appwrite] Preserved profile picture for user:', currentUserId);
-            }
-        }
-
-        try {
-            await account.deleteSession('current');
-        } catch (error) {
-            // If there's no active session, this is expected
-        }
-
+        
+        // Clear the client state first
         client.setJWT('');
+        
+        try {
+            // Try to delete the current session
+            await account.deleteSession('current');
+            console.log('[Appwrite] Session deleted successfully');
+        } catch (error) {
+            console.log('[Appwrite] No current session to delete');
+        }
 
         // Clear only session-related data from AsyncStorage
-        await AsyncStorage.multiRemove([
-            'appwrite_user',
+        const keysToClear = [
             'appwrite_session',
-            'appwrite_fallback',
-            'user_data'
-        ]);
+            'appwrite_user',
+            'appwrite_prefs',
+            'appwrite_account',
+            'appwrite_team',
+            'appwrite_membership'
+        ];
 
-        console.log('[Appwrite] Logout completed - preserved user data for user:', currentUserId);
-        router.replace('/sign-in');
+        for (const key of keysToClear) {
+            try {
+                await AsyncStorage.removeItem(key);
+            } catch (error) {
+                console.log(`[Appwrite] Error clearing ${key}:`, error);
+            }
+        }
+
+        console.log('[Appwrite] Logout completed');
     } catch (error) {
         console.error('[Appwrite] Error during logout:', error);
         throw error;
     }
 };
 
-export async function getCurrentUser(){
-    try{
-        const response = await account.get()
-        if(response.$id){
-            // First try to get from temporary storage (if restored from logout)
-            const tempKey = `temp_profile_${response.$id}`;
-            const tempAvatar = await AsyncStorage.getItem(tempKey);
-            
-            if (tempAvatar) {
-                // If we found temporary avatar, restore it to the main storage
-                const storageKey = `profile_${response.$id}`;
-                await AsyncStorage.setItem(storageKey, tempAvatar);
-                await AsyncStorage.removeItem(tempKey);
-                console.log('[Appwrite] Restored profile picture from temporary storage for user:', response.$id);
-                return {
-                    ...response,
-                    avatar: tempAvatar
-                };
+export async function getCurrentUser() {
+    try {
+        // First try to get the current session
+        const session = await account.getSession('current');
+        if (!session) {
+            console.log('[Appwrite] No active session');
+            return null;
+        }
+
+        // Set the JWT token
+        client.setJWT(session.providerAccessToken);
+
+        // Try to get the user with retry logic
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                const user = await account.get();
+                if (user?.$id) {
+                    return user;
+                }
+            } catch (error) {
+                console.log(`[Appwrite] Retry ${4-retries}/3 getting user`);
+                retries--;
+                if (retries === 0) throw error;
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            
-            // Try to get the stored avatar URI
-            const storageKey = `profile_${response.$id}`;
-            const storedAvatar = await AsyncStorage.getItem(storageKey);
-            
-            if (storedAvatar) {
-                console.log('[Appwrite] Found stored profile picture for user:', response.$id);
-                return {
-                    ...response,
-                    avatar: storedAvatar
-                };
-            }
-            
-            // If no stored avatar, try to get from user preferences
-            const userPrefs = await account.getPrefs();
-            if (userPrefs && userPrefs.avatar) {
-                console.log('[Appwrite] Found profile picture in user preferences for user:', response.$id);
-                // Store in AsyncStorage for future use
-                await AsyncStorage.setItem(storageKey, userPrefs.avatar);
-                return {
-                    ...response,
-                    avatar: userPrefs.avatar
-                };
-            }
-            
-            // If still no avatar, generate initials
-            console.log('[Appwrite] No profile picture found, generating initials for user:', response.$id);
-            const userAvatar = avatar.getInitials(response.name).toString();
-            return {
-                ...response,
-                avatar: userAvatar
-            };
         }
         return null;
-    }catch(error){
+    } catch (error) {
         console.error('[Appwrite] Error getting current user:', error);
+        // Don't clear AsyncStorage on error, just return null
         return null;
     }
 }
 
 export async function updateUser(userData: any) {
     try {
-        // Store the avatar URI in user preferences
+        if (!userData?.$id) {
+            throw new Error('Invalid user data: missing user ID');
+        }
+
+        // Get current preferences
+        const currentPrefs = await account.getPrefs();
+        
+        // Merge current preferences with new avatar
         const prefs = {
-            ...userData,
+            ...currentPrefs,
             avatar: userData.avatar
         };
 
@@ -188,7 +221,7 @@ export async function updateUser(userData: any) {
             console.log('[Appwrite] Updated profile picture for user:', response.$id);
 
             return {
-                ...response,
+                ...userData,
                 avatar: userData.avatar
             };
         }

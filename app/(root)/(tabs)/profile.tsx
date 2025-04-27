@@ -8,12 +8,14 @@ import DownloadData from '../components/DownloadData';
 import Calendar from '../components/Calendar';
 import InviteFriends from '../components/InviteFriends';
 import About from '../components/About';
-import { logout } from '@/lib/appwrite';
+import { logout, client, account } from '@/lib/appwrite';
 import Trends from '@/app/(root)/components/Trends';
 import { useUserContext } from '../context/UserContext';
 import { useExpenses } from '../context/ExpenseContext';
 import * as ImagePicker from 'expo-image-picker';
 import { updateUser } from '@/lib/appwrite';
+import { ID, Storage } from 'react-native-appwrite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');                     
 
@@ -57,20 +59,67 @@ const Profile = () => {
       if (!result.canceled && result.assets[0]) {
         setIsUpdatingAvatar(true);
         
-        // Update user avatar in Appwrite
-        const updatedUser = await updateUser({
-          ...user,
-          avatar: result.assets[0].uri
-        });
+        try {
+          // Upload image to Appwrite storage
+          const storage = new Storage(client);
+          const file = {
+            uri: result.assets[0].uri,
+            name: `profile_${user?.$id}.jpg`,
+            type: 'image/jpeg',
+            size: result.assets[0].fileSize || 0
+          };
+          
+          // Generate a valid file ID (max 36 chars, only a-z, A-Z, 0-9, period, hyphen, underscore)
+          const timestamp = Date.now().toString(36); // Convert to base36 to make it shorter
+          const fileId = `p_${user?.$id}_${timestamp}`.slice(0, 36); // Ensure it's not longer than 36 chars
+          
+          // Upload to the default bucket with a valid file ID
+          const response = await storage.createFile(
+            'default',
+            fileId,
+            file
+          );
+          
+          // Get the file URL
+          const fileUrl = storage.getFileView('default', response.$id);
+          
+          // Update user avatar in Appwrite
+          const updatedUser = await updateUser({
+            ...user,
+            avatar: fileUrl.toString()
+          });
 
-        // Update global context
-        setUser(updatedUser);
+          if (!updatedUser) {
+            throw new Error('Failed to update user profile');
+          }
+
+          // Update global context
+          setUser(updatedUser);
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          // If upload fails, try to save the image locally
+          try {
+            const base64Image = await convertImageToBase64(result.assets[0].uri);
+            await AsyncStorage.setItem(`profile_${user?.$id}`, base64Image);
+            const updatedUser = await updateUser({
+              ...user,
+              avatar: `data:image/jpeg;base64,${base64Image}`
+            });
+            if (!updatedUser) {
+              throw new Error('Failed to update user profile with local image');
+            }
+            setUser(updatedUser);
+          } catch (localError) {
+            console.error('Error saving image locally:', localError);
+            alert('Failed to upload profile picture. Please try again later.');
+          }
+        } finally {
+          setIsUpdatingAvatar(false);
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
       alert('Failed to update profile picture. Please try again.');
-    } finally {
-      setIsUpdatingAvatar(false);
     }
   };
 
@@ -149,10 +198,18 @@ const Profile = () => {
             {/* User Info Card */}
             <View style={styles.userCard}>
               <View style={styles.avatarContainer}>
-                <Image
-                  source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
-                  style={styles.avatar}
-                />
+                {user?.avatar ? (
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarFallback]}>
+                    <Text style={styles.avatarFallbackText}>
+                      {user?.name?.[0]?.toUpperCase() || 'U'}
+                    </Text>
+                  </View>
+                )}
                 <TouchableOpacity 
                   style={styles.editAvatarButton} 
                   activeOpacity={0.7}
@@ -442,6 +499,34 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
     marginLeft: 8,
   },
+  avatarFallback: {
+    backgroundColor: '#2d3748',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarFallbackText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontFamily: 'Barlow-SemiBold',
+  },
 });
+
+const convertImageToBase64 = async (uri: string): Promise<string> => {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result.split(',')[1]);
+      } else {
+        reject(new Error('Failed to convert image to base64'));
+      }
+    };
+    reader.readAsDataURL(blob);
+  });
+};
 
 export default Profile;

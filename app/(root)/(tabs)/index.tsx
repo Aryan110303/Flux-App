@@ -97,11 +97,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 36,
     letterSpacing: 0.1,
+    fontFamily: 'Barlow-SemiBold',
   },
   convertedAmount: {
     color: '#fff',
     fontSize: 20,
     opacity: 0.4,
+    fontFamily: 'Barlow-Regular',
   },
   recurrenceTag: {
     backgroundColor: '#7b80ff',
@@ -549,18 +551,10 @@ export default function Home() {
               <View className={`flex flex-row items-center justify-between px-5 ${Platform.OS === 'ios' ? 'mt-4' : 'mt-12'}`}>
                 <View className="flex flex-row items-center">
                   <TouchableOpacity onPress={() => router.push("/profile")}>
-                    {user?.avatar ? (
-                      <Image 
-                        source={{ uri: user.avatar }} 
-                        className="rounded-full size-12"
-                        defaultSource={images.avatar}
-                      />
-                    ) : (
-                      <Image 
-                        source={images.avatar} 
-                        className="rounded-full size-12" 
-                      />
-                    )}
+                    <Image 
+                      source={{ uri: user?.avatar }} 
+                      className="rounded-full size-12"
+                    />
                   </TouchableOpacity>
                   <View className="flex flex-col ml-2 items-start justify-center">
                     <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
@@ -591,10 +585,10 @@ export default function Home() {
                 <Text className="text-[#fff] font-rubik-bold text-md">Monthly Savings</Text>
                 <View className="flex flex-row justify-between mt-1">
                   <View>
-                    <Text style={[styles.amountText, { fontFamily: 'Barlow-Semibold' }]}>
+                    <Text style={styles.amountText}>
                       {currency === 'USD' ? `$${changeAmount}` : `₹${savings}`}
                     </Text>
-                    <Text style={[styles.convertedAmount, { fontFamily: 'Barlow' }]}>
+                    <Text style={styles.convertedAmount}>
                       {currency === 'USD' ? `≈₹${savings}` : `≈$${changeAmount}`}
                     </Text>
                     {isRecurring && (

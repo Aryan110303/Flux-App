@@ -122,13 +122,16 @@ const InputNumberAnnual = ({ isVisible, onClose, onSave }: NumberType) => {
             <Text style={styles.headerTitle}>{salaryYearly > 0 ? "Edit Salary" : "Add Salary"}</Text>
             <TouchableOpacity style={styles.avatarContainer}>
               {user?.avatar ? (
-                <Image 
-                  source={{ uri: user.avatar }} 
+                <Image
+                  source={{ uri: user.avatar }}
                   style={styles.avatar}
-                  defaultSource={images.avatar}
                 />
               ) : (
-                <Image source={images.avatar} style={styles.avatar} />
+                <View style={[styles.avatar, styles.avatarFallback]}>
+                  <Text style={styles.avatarFallbackText}>
+                    {user?.name?.[0]?.toUpperCase() || 'U'}
+                  </Text>
+                </View>
               )}
             </TouchableOpacity>
           </View>
@@ -201,13 +204,26 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  avatarFallback: {
+    backgroundColor: '#2d3748',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  avatarFallbackText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontFamily: 'Barlow-SemiBold',
   },
   salaryText: {
     color: "#fff",

@@ -19,7 +19,6 @@ type ExpenseContextType = {
   clearExpenses: () => void;
   resetStorage: () => void;
   reloadExpenses: () => Promise<void>;
-  handleLogout: () => Promise<void>;
 };
 
 // Development mode flag - set this to true during development
@@ -53,39 +52,27 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
   const [storageKey, setStorageKey] = useState(STORAGE_KEY);
   const [isLoading, setIsLoading] = useState(true);
   const [previousUserId, setPreviousUserId] = useState<string | undefined>(undefined);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Load expenses when userId changes
   useEffect(() => {
     const loadExpenses = async () => {
       if (!userId) {
-        if (!isLoggingOut) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
         return;
       }
 
       const newStorageKey = `${STORAGE_KEY}_${userId}`;
+      console.log('[ExpenseContext] Loading expenses with key:', newStorageKey);
       setStorageKey(newStorageKey);
 
-      // If userId has changed and we're not logging out, reset state
-      if (previousUserId !== userId && !isLoggingOut) {
-        setExpenses([]);
-        setPreviousUserId(userId);
-      }
-
       try {
-        // First try to load from temporary storage (if restored from logout)
-        const tempKey = `temp_expenses_${userId}`;
-        const tempExpenses = await AsyncStorage.getItem(tempKey);
+        const storedExpenses = await AsyncStorage.getItem(newStorageKey);
+        console.log('[ExpenseContext] Found stored expenses:', storedExpenses);
         
-        if (tempExpenses) {
-          // If we found temporary expenses, restore them to the main storage
-          await AsyncStorage.setItem(newStorageKey, tempExpenses);
-          await AsyncStorage.removeItem(tempKey);
-          console.log('[ExpenseContext] Restored expenses from temporary storage for userId:', userId);
+        if (storedExpenses) {
+          const parsedExpenses = JSON.parse(storedExpenses);
+          console.log('[ExpenseContext] Loading expenses for userId:', userId);
           
-          const parsedExpenses = JSON.parse(tempExpenses);
           const migratedExpenses = parsedExpenses.map((exp: any) => ({
             ...exp,
             type: exp.type || 'expense',
@@ -94,20 +81,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
           }));
           setExpenses(migratedExpenses);
         } else {
-          // Otherwise load from regular storage
-          const storedExpenses = await AsyncStorage.getItem(newStorageKey);
-          if (storedExpenses) {
-            const parsedExpenses = JSON.parse(storedExpenses);
-            console.log('[ExpenseContext] Loading expenses for userId:', userId);
-            
-            const migratedExpenses = parsedExpenses.map((exp: any) => ({
-              ...exp,
-              type: exp.type || 'expense',
-              date: exp.date || new Date().toISOString(),
-              category: exp.category || 'uncategorized'
-            }));
-            setExpenses(migratedExpenses);
-          }
+          console.log('[ExpenseContext] No expenses found for userId:', userId);
+          setExpenses([]);
         }
       } catch (error) {
         console.error('[ExpenseContext] Error loading expenses:', error);
@@ -118,22 +93,17 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
 
     setIsLoading(true);
     loadExpenses();
-  }, [userId, previousUserId, isLoggingOut]);
+  }, [userId]);
 
   // Save expenses whenever they change
   useEffect(() => {
-    if (isLoading) return; // Don't save while loading
+    if (isLoading || !userId) return;
 
     const saveExpenses = async () => {
-      if (!userId) {
-        if (!isLoggingOut) {
-          console.log('[ExpenseContext] No userId provided, skipping data save');
-        }
-        return;
-      }
-
       try {
-        await AsyncStorage.setItem(storageKey, JSON.stringify(expenses));
+        const newStorageKey = `${STORAGE_KEY}_${userId}`;
+        console.log('[ExpenseContext] Saving expenses with key:', newStorageKey);
+        await AsyncStorage.setItem(newStorageKey, JSON.stringify(expenses));
         console.log('[ExpenseContext] Saved expenses for userId:', userId);
       } catch (error) {
         console.error('[ExpenseContext] Error saving expenses:', error);
@@ -141,7 +111,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
     };
 
     saveExpenses();
-  }, [expenses, userId, storageKey, isLoading, isLoggingOut]);
+  }, [expenses, userId, isLoading]);
 
   const addExpense = (expense: Expense) => {
     setExpenses(prev => [expense, ...prev]);
@@ -158,7 +128,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
   };
 
   const clearExpenses = async () => {
-    if (!userId || isLoggingOut) return;
+    if (!userId) return;
     setExpenses([]);
     try {
       await AsyncStorage.removeItem(storageKey);
@@ -190,22 +160,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
     }
   };
 
-  // Function to handle logout
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      // Save current expenses before logout
-      if (userId) {
-        await AsyncStorage.setItem(storageKey, JSON.stringify(expenses));
-        console.log('[ExpenseContext] Saved expenses before logout for userId:', userId);
-      }
-    } catch (error) {
-      console.error('[ExpenseContext] Error saving expenses during logout:', error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   const value = {
     expenses,
     addExpense,
@@ -214,7 +168,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode, userId?: str
     clearExpenses,
     resetStorage: clearExpenses,
     reloadExpenses,
-    handleLogout,
   };
 
   return (

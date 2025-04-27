@@ -1,5 +1,6 @@
 import { Alert } from "react-native";
 import { useEffect, useState, useCallback } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UseAppwriteOptions<T, P extends Record<string, string | number>> {
   fn: (params: P) => Promise<T>;
@@ -25,6 +26,13 @@ export const useAppwrite = <T, P extends Record<string, string | number>>({
 
   const fetchData = useCallback(
     async (fetchParams: P) => {
+      // Check if we're in a logout state
+      const isLoggingOut = await AsyncStorage.getItem('isLoggingOut');
+      if (isLoggingOut === 'true') {
+        console.log('[useAppwrite] Skipping fetch during logout');
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -49,7 +57,15 @@ export const useAppwrite = <T, P extends Record<string, string | number>>({
     }
   }, []);
 
-  const refetch = async (newParams: P) => await fetchData(newParams);
+  const refetch = async (newParams: P) => {
+    // Check if we're in a logout state
+    const isLoggingOut = await AsyncStorage.getItem('isLoggingOut');
+    if (isLoggingOut === 'true') {
+      console.log('[useAppwrite] Skipping refetch during logout');
+      return;
+    }
+    await fetchData(newParams);
+  };
 
   return { data, loading, error, refetch };
 };

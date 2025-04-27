@@ -72,18 +72,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({
       const newStorageKey = `${STORAGE_KEY}_${userId}`;
       setUserStorageKey(newStorageKey);
 
-      // If userId has changed, reset state
+      // Only update previousUserId if it has changed
       if (previousUserId !== userId) {
-        setSalaryYearly(0);
-        setSalaryMonthly("0");
-        setGoal(null);
-        setSavings(0);
-        setExistingSavings(0);
-        setGoalAmount(0);
-        setIsSalaryInputComplete(false);
-        setIsRecurring(true);
-        setRecurrenceFrequency('monthly');
-        setLastSalaryReceived(null);
         setPreviousUserId(userId);
       }
 
@@ -92,18 +82,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({
         if (storedData) {
           const parsedData = JSON.parse(storedData);
           console.log('[UserContext] Loading user data for userId:', userId);
-          
-          // Update all state values from stored data
-          setSalaryYearly(parsedData.salaryYearly || 0);
-          setSalaryMonthly(parsedData.salaryMonthly || "0");
-          setGoal(parsedData.goal || null);
-          setSavings(parsedData.savings || 0);
-          setExistingSavings(parsedData.existingSavings || 0);
-          setGoalAmount(parsedData.goalAmount || 0);
-          setIsSalaryInputComplete(parsedData.isSalaryInputComplete || false);
-          setIsRecurring(parsedData.isRecurring ?? true);
-          setRecurrenceFrequency(parsedData.recurrenceFrequency || 'monthly');
-          setLastSalaryReceived(parsedData.lastSalaryReceived ? new Date(parsedData.lastSalaryReceived) : null);
+          updateStateFromData(parsedData);
+        } else {
+          console.log('[UserContext] No user data found for userId:', userId);
+          // Initialize with default values
+          setSalaryYearly(0);
+          setSalaryMonthly("0");
+          setGoal(null);
+          setSavings(0);
+          setExistingSavings(0);
+          setGoalAmount(0);
+          setIsSalaryInputComplete(false);
+          setIsRecurring(true);
+          setRecurrenceFrequency('monthly');
+          setLastSalaryReceived(null);
         }
       } catch (error) {
         console.error('[UserContext] Error loading user data:', error);
@@ -116,16 +108,25 @@ export const UserProvider: React.FC<UserProviderProps> = ({
     loadUserData();
   }, [userId, previousUserId]);
 
+  // Helper function to update state from parsed data
+  const updateStateFromData = (parsedData: any) => {
+    setSalaryYearly(parsedData.salaryYearly || 0);
+    setSalaryMonthly(parsedData.salaryMonthly || "0");
+    setGoal(parsedData.goal || null);
+    setSavings(parsedData.savings || 0);
+    setExistingSavings(parsedData.existingSavings || 0);
+    setGoalAmount(parsedData.goalAmount || 0);
+    setIsSalaryInputComplete(parsedData.isSalaryInputComplete || false);
+    setIsRecurring(parsedData.isRecurring ?? true);
+    setRecurrenceFrequency(parsedData.recurrenceFrequency || 'monthly');
+    setLastSalaryReceived(parsedData.lastSalaryReceived ? new Date(parsedData.lastSalaryReceived) : null);
+  };
+
   // Save user data whenever it changes
   useEffect(() => {
-    if (isLoading) return; // Don't save while loading
+    if (isLoading || !userId) return; // Don't save while loading or if no userId
 
     const saveUserData = async () => {
-      if (!userId) {
-        console.log('No userId provided, skipping data save');
-        return;
-      }
-
       try {
         const userData = {
           salaryYearly,
@@ -141,9 +142,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({
         };
         
         await AsyncStorage.setItem(userStorageKey, JSON.stringify(userData));
-        console.log('Saved user data for userId:', userId, userData);
+        console.log('[UserContext] Saved user data for userId:', userId);
       } catch (error) {
-        console.error('Error saving user data:', error);
+        console.error('[UserContext] Error saving user data:', error);
       }
     };
 
