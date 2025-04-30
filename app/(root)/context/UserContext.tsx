@@ -34,6 +34,7 @@ export interface UserContextType {
   setLastSalaryReceived: (date: Date | null) => void;
   addSalaryToSavings: () => void;
   resetStorage: () => void;
+  setUserContext: (user: any) => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -225,7 +226,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({
         lastSalaryReceived,
         setLastSalaryReceived,
         addSalaryToSavings,
-        resetStorage
+        resetStorage,
+        setUserContext: () => {}
       }}
     >
       {children}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, StyleSheet, Dimensions, Platform, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, StyleSheet, Dimensions, Platform, StatusBar, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useGlobalContext } from '@/lib/global-provider';
 import { settings } from '@/constants/data';
 import MySavings from '../components/MySavings';
@@ -8,7 +8,7 @@ import DownloadData from '../components/DownloadData';
 import Calendar from '../components/Calendar';
 import InviteFriends from '../components/InviteFriends';
 import About from '../components/About';
-import { logout, client, account } from '@/lib/appwrite';
+import { logout, client, account, storage } from '@/lib/appwrite';
 import Trends from '@/app/(root)/components/Trends';
 import { useUserContext } from '../context/UserContext';
 import { useExpenses } from '../context/ExpenseContext';
@@ -16,12 +16,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { updateUser } from '@/lib/appwrite';
 import { ID, Storage } from 'react-native-appwrite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
-const { width } = Dimensions.get('window');                     
+const { width } = Dimensions.get('window');  
+
+export const config = {
+  bucketid: process.env.EXPO_PUBLIC_STORAGE_BUCKET_ID,
+}
+
 
 const Profile = () => {
   const { user, setUser, logout: globalLogout } = useGlobalContext();
-  const { savings } = useUserContext();
+  const { savings, setUserContext } = useUserContext();
   const { expenses } = useExpenses();
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
   const [showTrends, setShowTrends] = useState(false);
@@ -41,85 +48,98 @@ const Profile = () => {
 
   const pickImage = async () => {
     try {
-      // Request permission
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
-        return;
+      setIsUpdatingAvatar(true);
+      
+      // Add debug logging for bucket ID
+      console.log('[Profile] Using bucket ID:', config.bucketid);
+      
+      if (!config.bucketid) {
+        throw new Error('Storage bucket ID is not configured. Please check your .env.local file.');
       }
 
-      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5,
+        quality: 1,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        setIsUpdatingAvatar(true);
-        
+      if (!result.canceled) {
+        const image = result.assets[0];
+        const imageUrl = image.uri;
         try {
-          // Upload image to Appwrite storage
-          const storage = new Storage(client);
-          const file = {
-            uri: result.assets[0].uri,
-            name: `profile_${user?.$id}.jpg`,
-            type: 'image/jpeg',
-            size: result.assets[0].fileSize || 0
-          };
-          
-          // Generate a valid file ID (max 36 chars, only a-z, A-Z, 0-9, period, hyphen, underscore)
-          const timestamp = Date.now().toString(36); // Convert to base36 to make it shorter
-          const fileId = `p_${user?.$id}_${timestamp}`.slice(0, 36); // Ensure it's not longer than 36 chars
-          
-          // Upload to the default bucket with a valid file ID
-          const response = await storage.createFile(
-            'default',
-            fileId,
-            file
-          );
-          
-          // Get the file URL
-          const fileUrl = storage.getFileView('default', response.$id);
-          
-          // Update user avatar in Appwrite
-          const updatedUser = await updateUser({
-            ...user,
-            avatar: fileUrl.toString()
-          });
-
-          if (!updatedUser) {
-            throw new Error('Failed to update user profile');
-          }
-
-          // Update global context
-          setUser(updatedUser);
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          // If upload fails, try to save the image locally
-          try {
-            const base64Image = await convertImageToBase64(result.assets[0].uri);
-            await AsyncStorage.setItem(`profile_${user?.$id}`, base64Image);
-            const updatedUser = await updateUser({
-              ...user,
-              avatar: `data:image/jpeg;base64,${base64Image}`
-            });
-            if (!updatedUser) {
-              throw new Error('Failed to update user profile with local image');
+          console.log('[Profile] Attempting to upload file to storage...');
+          const file = await storage.createFile(
+            config.bucketid,
+            'unique()',
+            {
+              uri: imageUrl,
+              name: 'profile.jpg',
+              type: 'image/jpeg',
+              size: image.fileSize || 0
             }
-            setUser(updatedUser);
-          } catch (localError) {
-            console.error('Error saving image locally:', localError);
-            alert('Failed to upload profile picture. Please try again later.');
+          );
+
+          if (file) {
+            console.log('[Profile] File uploaded successfully:', file.$id);
+            const fileUrl = storage.getFileView(config.bucketid, file.$id);
+            console.log('[Profile] Generated file URL:', fileUrl);
+
+            try {
+              console.log('[Profile] Attempting to update user with new avatar...');
+              const updatedUser = await updateUser({
+                ...user,
+                avatar: fileUrl.href || fileUrl.toString(), // Use href if available
+              });
+              
+              if (updatedUser) {
+                console.log('[Profile] User updated successfully');
+                setUser(updatedUser);
+                setUserContext(updatedUser);
+                Alert.alert('Success', 'Profile picture updated successfully!');
+              } else {
+                throw new Error('Failed to update user profile');
+              }
+            } catch (userUpdateError: any) {
+              console.error('[Profile] Error updating user:', userUpdateError);
+              console.error('[Profile] Error details:', {
+                message: userUpdateError?.message,
+                response: userUpdateError?.response,
+                code: userUpdateError?.code
+              });
+              
+              // Delete the uploaded file since we couldn't update the user
+              try {
+                await storage.deleteFile(config.bucketid, file.$id);
+                console.log('[Profile] Cleaned up uploaded file due to user update failure');
+              } catch (deleteError) {
+                console.error('[Profile] Error cleaning up file:', deleteError);
+              }
+
+              Alert.alert(
+                'Update Failed',
+                'Failed to update profile picture. Please try again.'
+              );
+            }
           }
-        } finally {
-          setIsUpdatingAvatar(false);
+        } catch (uploadError: any) {
+          console.error('[Profile] Error uploading to bucket:', uploadError);
+          console.error('[Profile] Upload error details:', {
+            message: uploadError?.message,
+            response: uploadError?.response,
+            code: uploadError?.code
+          });
+          Alert.alert(
+            'Upload Failed',
+            'Failed to upload profile picture. Please ensure the storage bucket ID is correctly configured.'
+          );
         }
       }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      alert('Failed to update profile picture. Please try again.');
+    } catch (error: any) {
+      console.error('[Profile] Error:', error?.message || 'Unknown error');
+      Alert.alert('Error', error?.message || 'Failed to upload image. Please try again.');
+    } finally {
+      setIsUpdatingAvatar(false);
     }
   };
 

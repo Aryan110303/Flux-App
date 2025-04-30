@@ -5,6 +5,8 @@ import { useExpenses } from '../context/ExpenseContext';
 import { HfInference } from '@huggingface/inference';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import { getFinancialAdvice } from '@/lib/gemini';
+import { Ionicons } from '@expo/vector-icons';
 
 // Theme colors - match with tailwind.config.js
 const COLORS = {
@@ -146,16 +148,6 @@ const INVESTMENT_KNOWLEDGE = {
   }
 };
 
-// Suggested questions for users (updated)
-const SUGGESTED_QUESTIONS = [
-  "What investment rules should I know about?",
-  "What is the 50-30-20 budget rule?",
-  "How does the 15-3-10 Vehicle Rule work?",
-  "What is the Rule of 72?",
-  "How much emergency fund should I have?",
-  "What is the 28/36 debt rule for housing?"
-];
-
 // Financial investment rules and strategies
 const INVESTMENT_RULES = [
   {
@@ -242,13 +234,18 @@ interface ChatMessage {
   fromDataset?: boolean;
 }
 
+interface Message {
+  text: string;
+  isUser: boolean;
+}
+
 const InvestScreen = () => {
   const { goal, goalAmount, savings } = useUserContext();
   const { expenses } = useExpenses();
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<Message[]>([
     { 
-      role: 'assistant', 
-      content: "Hello! I can provide information about various investment options available in India. What would you like to know?" 
+      text: "Hello! I'm your financial education assistant. I can help you understand financial concepts, budgeting tips, and general money management. What would you like to know?", 
+      isUser: false 
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -942,95 +939,40 @@ Question: ${question}`;
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
-    
-    // Add user message to chat
-    const userMessage: ChatMessage = { role: 'user', content: inputText.trim() };
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setIsLoading(true);
-    
-    try {
-      // Get AI response
-      const response = await getModelResponse(userMessage.content);
-      
-      // Check if this response came from our dataset
-      const isFromDataset = !!findSimilarQuestion(userMessage.content);
-      
-      // Add AI response to chat
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: response,
-        fromDataset: isFromDataset
-      }]);
-    } catch (error) {
-      console.error('Error getting response:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I'm sorry, I couldn't process your request. Please try again later."
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // Handle tap on suggested question
-  const handleSuggestedQuestion = (question: string) => {
-    setInputText(question);
-    
-    // Auto-send the question
-    const userMessage: ChatMessage = { role: 'user', content: question };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessage = inputText.trim();
+    setInputText('');
+    setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
     setIsLoading(true);
-    
-    // Immediately look for a match in the dataset
-    const datasetAnswer = findSimilarQuestion(question);
-    
-    if (datasetAnswer) {
-      // Use the dataset answer directly
-      setTimeout(() => {
+
+    try {
+        const response = await getFinancialAdvice(userMessage);
+        if (response.success && response.message) {
+            setMessages(prev => [...prev, { text: response.message, isUser: false }]);
+        } else {
+            setMessages(prev => [...prev, { 
+                text: "I apologize, but I couldn't process your request at the moment. Please try again.", 
+                isUser: false 
+            }]);
+        }
+    } catch (error) {
+        console.error('Error getting financial advice:', error);
         setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: datasetAnswer,
-          fromDataset: true
+            text: "I apologize, but I encountered an error. Please try again.", 
+            isUser: false 
         }]);
+    } finally {
         setIsLoading(false);
-        setInputText('');
-      }, 500); // Small delay for better UX
-    } else {
-      // Get from the model
-      getModelResponse(question)
-        .then(response => {
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: response,
-            fromDataset: false
-          }]);
-        })
-        .catch(error => {
-          console.error('Error getting response for suggested question:', error);
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: "I'm sorry, I couldn't process your request. Please try again later."
-          }]);
-        })
-        .finally(() => {
-          setIsLoading(false);
-          setInputText('');
-        });
     }
   };
 
   return (
-    <SafeAreaView style={[
-      styles.container,
-      // Use platform-specific padding for better handling of bottom area
-      { paddingBottom: 0 }
-    ]}>
+    <SafeAreaView style={styles.container}>
       <StatusBar 
         barStyle="light-content" 
-        backgroundColor={COLORS.main} 
+        backgroundColor="#1F2630"
       />
       
       {/* Header with dataset status */}
@@ -1043,8 +985,13 @@ Question: ${question}`;
         )}
       </View>
       
-      {/* Messages area */}
-      <View style={styles.mainContent}>
+      {/* Main content area with KeyboardAvoidingView */}
+      <KeyboardAvoidingView 
+        style={styles.mainContent}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {/* Messages area */}
         <ScrollView
           style={styles.messageContainer}
           ref={scrollViewRef}
@@ -1063,7 +1010,19 @@ Question: ${question}`;
                   <TouchableOpacity 
                     key={index}
                     style={styles.ruleItem}
-                    onPress={() => handleSuggestedQuestion(`What is the ${rule.name}?`)}
+                    onPress={() => {
+                      const question = `What is the ${rule.name}?`;
+                      setInputText(question);
+                      setTimeout(() => {
+                        setMessages(prev => [...prev, { text: question, isUser: true }]);
+                        getFinancialAdvice(question).then(response => {
+                          if (response.success && response.message) {
+                            const messageText = response.message || "I apologize, but I couldn't process your request.";
+                            setMessages(prev => [...prev, { text: messageText, isUser: false }]);
+                          }
+                        });
+                      }, 100);
+                    }}
                   >
                     <Text style={styles.ruleName}>{rule.name}</Text>
                     <Text style={styles.ruleDesc}>{rule.description}</Text>
@@ -1077,70 +1036,55 @@ Question: ${question}`;
             <View 
               key={index} 
               style={[
-                styles.messageBubble, 
-                message.role === 'user' ? styles.userBubble : styles.assistantBubble
+                styles.messageBubble,
+                message.isUser ? styles.userMessage : styles.aiMessage
               ]}
             >
               <Text style={[
                 styles.messageText,
-                message.role === 'user' ? styles.userMessageText : styles.assistantMessageText
+                message.isUser ? styles.userMessageText : styles.aiMessageText
               ]}>
-                {message.content}
+                {message.text}
               </Text>
-              {message.role === 'assistant' && message.fromDataset && (
-                <View style={styles.sourceTag}>
-                  <Text style={styles.sourceTagText}>From expert dataset</Text>
-                </View>
-              )}
             </View>
           ))}
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.accent} />
-              <Text style={styles.loadingText}>Thinking...</Text>
+              <ActivityIndicator color="#7b80ff" size="small" />
             </View>
           )}
         </ScrollView>
-      </View>
       
-      {/* Fixed bottom input area */}
-      <View style={styles.inputSection}>
-        <View style={styles.suggestedContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestedScroll}>
-            {SUGGESTED_QUESTIONS.map((question, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.suggestedQuestion}
-                onPress={() => handleSuggestedQuestion(question)}
-              >
-                <Text style={styles.suggestedText}>{question}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+        {/* Input area */}
+        <View style={styles.inputSection}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask about financial concepts..."
+              placeholderTextColor="#666"
+              multiline
+              maxLength={500}
+              onSubmitEditing={handleSend}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputText.trim() || isLoading) && styles.sendButtonDisabled
+              ]}
+              onPress={handleSend}
+              disabled={!inputText.trim() || isLoading}
+            >
+              <Ionicons 
+                name="send" 
+                size={24} 
+                color={!inputText.trim() || isLoading ? "#666" : "#7b80ff"} 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Ask about investments..."
-            placeholderTextColor={`${COLORS.primary}80`}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={!inputText.trim() || isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
-            ) : (
-              <Text style={styles.sendButtonText}>Send</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -1148,13 +1092,11 @@ Question: ${question}`;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.main,
-    display: 'flex',
-    flexDirection: 'column',
-    marginTop: 15,
+    backgroundColor: '#1F2630',
+    paddingBottom: Platform.OS === 'ios' ? 0 : 60, // Add padding for Android navigation bar
   },
   header: {
-    backgroundColor: COLORS.main,
+    backgroundColor: '#1F2630',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1162,15 +1104,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: `${COLORS.accent}33`, // accent with transparency
+    borderBottomColor: '#7b80ff33',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.primary,
+    color: '#fff',
   },
   datasetBadge: {
-    backgroundColor: `${COLORS.accent}33`, // accent with transparency
+    backgroundColor: '#7b80ff33',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1178,21 +1120,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   datasetText: {
-    color: COLORS.accent,
+    color: '#7b80ff',
     fontSize: 12,
   },
   mainContent: {
     flex: 1,
-    paddingBottom: 120, // Reduced padding so there's no empty space
+    width: '100%',
   },
   messageContainer: {
     flex: 1,
-    flexGrow: 1,
-    paddingBottom: 100, // Adjusted for the input section height
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 100, // Adjusted to match the content properly
+    paddingBottom: 120, // Increased padding to ensure content is visible above input
   },
   messageBubble: {
     padding: 12,
@@ -1200,19 +1140,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     maxWidth: '85%',
     elevation: 1,
-    shadowColor: '#000', // Keep black for shadow
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  userBubble: {
+  userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: `${COLORS.accent}4D`, // accent with 30% opacity
+    backgroundColor: '#7b80ff',
     borderBottomRightRadius: 4,
   },
-  assistantBubble: {
+  aiMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: `${COLORS.main}CC`, // main with 80% opacity
+    backgroundColor: '#2d3748',
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -1220,87 +1160,52 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   userMessageText: {
-    color: COLORS.primary,
+    color: '#fff',
   },
-  assistantMessageText: {
-    color: COLORS.primary,
-  },
-  sourceTag: {
-    marginTop: 8,
-    backgroundColor: `${COLORS.accent}26`, // accent with 15% opacity
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  sourceTagText: {
-    fontSize: 12,
-    color: COLORS.accent,
-    fontWeight: '500',
+  aiMessageText: {
+    color: '#fff',
   },
   inputSection: {
-    backgroundColor: `${COLORS.main}F0`,
-    borderTopWidth: 2,
-    borderTopColor: COLORS.accent,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10, // Reduced padding to prevent cutoff
-    paddingTop: 10,
-    padding: 8,
-    position: 'absolute',
-    width: '100%',
-    zIndex: 1000,
-    bottom: 0, // Ensure it's at the bottom
-    marginTop: 'auto',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    backgroundColor: '#1F2630',
+    borderTopWidth: 1,
+    borderTopColor: '#7b80ff33',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 10, // Reduced padding
     alignItems: 'center',
-    marginHorizontal: 8,
-    backgroundColor: `${COLORS.main}`,
+    backgroundColor: '#2d3748',
     borderRadius: 25,
-    borderWidth: 1,
-    borderColor: COLORS.accent,
-    marginBottom: 90,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: Platform.OS === 'ios' ? 20 : 0,
   },
   input: {
     flex: 1,
-    backgroundColor: "#FFFFFF", 
-    borderWidth: 2,
-    borderColor: COLORS.accent,
-    borderRadius: 16, // Slightly reduced radius
-    paddingHorizontal: 12, // Reduced padding
-    paddingVertical: 8, // Reduced padding
-    fontSize: 14, // Slightly smaller font
-    color: "#000000",
-    maxHeight: 80,
-    minHeight: 36, // Reduced min height
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    maxHeight: 100,
+    fontFamily: 'Rubik',
   },
   sendButton: {
-    width: 60, // Slightly smaller
-    height: 40, // Slightly smaller
-    marginLeft: 8, // Reduced margin
+    width: 60,
+    height: 40,
+    marginLeft: 8,
     borderRadius: 10,
-    backgroundColor: COLORS.accent,
+    backgroundColor: '#1F2630',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3, // Slightly reduced elevation
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },
   sendButtonDisabled: {
-    backgroundColor: `${COLORS.accent}80`, // accent with 50% opacity
-  },
-  sendButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 15, // Smaller font size
+    backgroundColor: '#7b80ff80',
   },
   loadingContainer: {
     alignItems: 'center',
@@ -1308,50 +1213,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  loadingText: {
-    marginLeft: 8,
-    color: COLORS.accent,
-    fontSize: 14,
-  },
-  suggestedContainer: {
-    padding: 4, // Further reduced padding
-    marginBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: `${COLORS.accent}1A`,
-  },
-  suggestedScroll: {
-    flexDirection: 'row',
-  },
-  suggestedQuestion: {
-    backgroundColor: `${COLORS.accent}1A`,
-    paddingHorizontal: 10, // Reduced padding
-    paddingVertical: 5, // Reduced padding
-    marginRight: 5, // Reduced margin
-    borderRadius: 12, // Reduced border radius
-    borderWidth: 1,
-    borderColor: `${COLORS.accent}4D`,
-  },
-  suggestedText: {
-    fontSize: 12, // Smaller font size
-    color: COLORS.accent,
-  },
   introCard: {
-    backgroundColor: `${COLORS.main}BF`, // main with 75% opacity
+    backgroundColor: '#1F2630BF',
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: `${COLORS.accent}33`, // accent with 20% opacity
+    borderColor: '#7b80ff33',
   },
   introTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.primary,
+    color: '#fff',
     marginBottom: 8,
   },
   introText: {
     fontSize: 14,
-    color: COLORS.primary,
+    color: '#fff',
     marginBottom: 8,
   },
   rulesList: {
@@ -1360,19 +1238,19 @@ const styles = StyleSheet.create({
   ruleItem: {
     padding: 12,
     borderWidth: 1,
-    borderColor: `${COLORS.accent}4D`, // accent with 30% opacity
+    borderColor: '#7b80ff4D',
     borderRadius: 8,
     marginVertical: 4,
-    backgroundColor: `${COLORS.main}99`, // main with 60% opacity
+    backgroundColor: '#1F263099',
   },
   ruleName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.accent,
+    color: '#7b80ff',
   },
   ruleDesc: {
     fontSize: 14,
-    color: COLORS.primary,
+    color: '#fff',
     marginTop: 4,
   },
 });

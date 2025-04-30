@@ -1,4 +1,4 @@
-import {Account, Avatars, Client, OAuthProvider} from "react-native-appwrite"
+import {Account, Avatars, Client, OAuthProvider, Storage} from "react-native-appwrite"
 import * as Linking from 'expo-linking'
 import {openAuthSessionAsync} from 'expo-web-browser'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -23,6 +23,7 @@ client
 
 export const avatar = new Avatars(client)
 export const account = new Account(client)
+export const storage = new Storage(client)
 
 export async function checkSession() {
     try {
@@ -179,6 +180,20 @@ export async function getCurrentUser() {
             try {
                 const user = await account.get();
                 if (user?.$id) {
+                    // Load saved avatar URL from AsyncStorage
+                    try {
+                        const storageKey = `profile_${user.$id}`;
+                        const savedAvatarUrl = await AsyncStorage.getItem(storageKey);
+                        if (savedAvatarUrl) {
+                            console.log('[Appwrite] Loaded saved avatar URL for user:', user.$id);
+                            return {
+                                ...user,
+                                avatar: savedAvatarUrl
+                            };
+                        }
+                    } catch (storageError) {
+                        console.error('[Appwrite] Error loading avatar from storage:', storageError);
+                    }
                     return user;
                 }
             } catch (error) {
@@ -202,24 +217,15 @@ export async function updateUser(userData: any) {
             throw new Error('Invalid user data: missing user ID');
         }
 
-        // Get current preferences
-        const currentPrefs = await account.getPrefs();
+        // Store the avatar URL in AsyncStorage
+        const storageKey = `profile_${userData.$id}`;
+        await AsyncStorage.setItem(storageKey, userData.avatar);
         
-        // Merge current preferences with new avatar
-        const prefs = {
-            ...currentPrefs,
-            avatar: userData.avatar
-        };
-
-        // Update user preferences
-        const response = await account.updatePrefs(prefs);
+        // Update the user's name to trigger a refresh (keeping the same name)
+        const response = await account.updateName(userData.name || '');
         
         if(response.$id) {
-            // Store the avatar URI in AsyncStorage for persistence
-            const storageKey = `profile_${response.$id}`;
-            await AsyncStorage.setItem(storageKey, userData.avatar);
             console.log('[Appwrite] Updated profile picture for user:', response.$id);
-
             return {
                 ...userData,
                 avatar: userData.avatar
@@ -228,6 +234,6 @@ export async function updateUser(userData: any) {
         return null;
     } catch(error) {
         console.error('[Appwrite] Error updating user:', error);
-        return null;
+        throw error;
     }
 }

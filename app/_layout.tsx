@@ -14,6 +14,8 @@ import { DebtProvider } from './(root)/context/DebtContext'
 import DevTools from './(root)/components/DevTools'
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { checkSession, getCurrentUser } from '../lib/appwrite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Onboarding from './(root)/components/Onboarding';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -23,6 +25,7 @@ function AppContent() {
   const segments = useSegments();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -40,13 +43,11 @@ function AppContent() {
         setIsLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
   useEffect(() => {
     const inAuthGroup = segments[0] === 'sign-in';
-    
     if (!isLoading) {
       if (!user && !inAuthGroup) {
         router.replace('/sign-in');
@@ -55,6 +56,29 @@ function AppContent() {
       }
     }
   }, [user, segments, isLoading]);
+
+  useEffect(() => {
+    // Check onboarding status for the current user
+    if (user && user.$id) {
+      AsyncStorage.getItem(`onboardingCompleted_${user.$id}`).then(val => {
+        setIsOnboardingCompleted(val === 'true');
+      });
+    } else {
+      setIsOnboardingCompleted(null);
+    }
+  }, [user]);
+
+  const handleOnboardingComplete = async () => {
+    if (user && user.$id) {
+      await AsyncStorage.setItem(`onboardingCompleted_${user.$id}`, 'true');
+      setIsOnboardingCompleted(true);
+    }
+  };
+
+  // Show onboarding only if user is signed in and onboarding is not completed for this user
+  if (user && isOnboardingCompleted === false) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <ToastProvider>
@@ -83,7 +107,6 @@ export default function RootLayout() {
       try {
         // Keep the splash screen visible while we prepare the app
         await SplashScreen.preventAutoHideAsync();
-        
         // Wait for fonts to load
         if (fontsLoaded) {
           // Hide the splash screen
@@ -93,7 +116,6 @@ export default function RootLayout() {
         console.warn(e);
       }
     }
-
     prepare();
   }, [fontsLoaded]);
 

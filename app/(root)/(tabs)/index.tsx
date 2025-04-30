@@ -551,10 +551,34 @@ export default function Home() {
               <View className={`flex flex-row items-center justify-between px-5 ${Platform.OS === 'ios' ? 'mt-4' : 'mt-12'}`}>
                 <View className="flex flex-row items-center">
                   <TouchableOpacity onPress={() => router.push("/profile")}>
-                    <Image 
-                      source={{ uri: user?.avatar }} 
-                      className="rounded-full size-12"
-                    />
+                    {user?.avatar ? (
+                      <Image
+                        source={{ uri: user.avatar }}
+                        className="rounded-full size-12"
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: '#2d3748',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: '#fff',
+                            fontSize: 24,
+                            fontWeight: 'bold',
+                            fontFamily: 'Barlow-SemiBold',
+                          }}
+                        >
+                          {user?.name?.[0]?.toUpperCase() || 'U'}
+                        </Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                   <View className="flex flex-col ml-2 items-start justify-center">
                     <Text className="text-xs text-[#fff] font-rubik">Welcome</Text>
