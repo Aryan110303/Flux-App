@@ -548,7 +548,7 @@ export default function Home() {
             className="h-full"
           >
             <View className="px-1">
-              <View className={`flex flex-row items-center justify-between px-5 ${Platform.OS === 'ios' ? 'mt-4' : 'mt-12'}`}>
+              <View className={`flex flex-row items-center justify-between px-5 ${Platform.OS === 'ios' ? 'mt-12' : 'mt-12'}`}>
                 <View className="flex flex-row items-center">
                   <TouchableOpacity onPress={() => router.push("/profile")}>
                     {user?.avatar ? (

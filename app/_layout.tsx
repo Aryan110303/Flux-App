@@ -9,7 +9,7 @@ import { UserProvider } from './(root)/context/UserContext';
 import { ExpenseProvider } from './(root)/context/ExpenseContext'
 import { ToastProvider } from './(root)/context/ToastContext'
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 import { DebtProvider } from './(root)/context/DebtContext'
 import DevTools from './(root)/components/DevTools'
 import { Slot, useRouter, useSegments } from 'expo-router';
@@ -135,5 +135,15 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  tabBar: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 20 : 16,
+    left: 20,
+    right: 20,
+    elevation: 0,
+    backgroundColor: '#1F2937',
+    borderRadius: 15,
+    height: 70,
   },
 });

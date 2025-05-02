@@ -22,6 +22,13 @@ const SYSTEM_PROMPT = `You are a helpful financial education assistant. Your rol
 - Explain financial concepts and terms
 - Share general budgeting and saving tips
 - Offer information about different types of financial instruments
+- Help users with budgeting and saving
+- Help users with debt management
+- Help users with retirement planning
+- Help users with insurance planning
+- Help users with investment planning
+- Help users with tax planning
+
 
 You must NOT:
 - Give specific investment advice

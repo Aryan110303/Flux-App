@@ -1097,14 +1097,14 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1F2630',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 24 : 0, // Increased top padding for Android
     paddingVertical: 16,
     paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#7b80ff33',
+    borderBottomColor: '#7b80ff33', 
   },
   headerTitle: {
     fontSize: 24,

@@ -200,7 +200,7 @@ const Trends = ({ onClose }: TrendsProps) => {
   return (
     <SafeAreaView className="flex-1 bg-[#1f2630]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-4 mt-8">
+      <View className="flex-row items-center justify-between px-6 py-4 mt-4">
         <TouchableOpacity onPress={onClose} className="flex-row items-center">
           <Image source={icons.backArrow} className="size-6 mr-4" tintColor="#7b80ff" />
           <Text className="text-primary font-rubik-medium text-lg">Financial Trends</Text>

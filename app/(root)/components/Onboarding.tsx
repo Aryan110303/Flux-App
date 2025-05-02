@@ -3,22 +3,23 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import images from '@/constants/images'
 
 const STEPS = [
-  {
-    title: 'Track Your Expenses',
-    description: 'Easily record and monitor your daily spending to stay on top of your finances.',
-    icon: images.onboarding,
-  },
-  {
-    title: 'Set Financial Goals',
-    description: 'Define your savings targets and let the app help you achieve them.',
-    icon: images.onboarding,
-  },
-  {
-    title: 'Get Smart Insights',
-    description: 'Receive personalized tips and insights to improve your money habits.',
-    icon: images.onboarding,
-  },
-];
+    {
+      title: 'Enter Your Salary 💰',
+      description: "Tell us what you earn — don't worry, we won’t tell your nosy relatives.",
+      icon: images.onboarding,
+    },
+    {
+      title: 'Add Your Expenses 💸',
+      description: "Rent, groceries, 5 AM Swiggy orders — list it all. Let’s see where it’s going.",
+      icon: images.onboarding,
+    },
+    {
+      title: 'Smarter Savings & Advice 🧠',
+      description: "We crunch the leftovers and offer no-nonsense suggestions (courtesy of our humble AI).",
+      icon: images.onboarding,
+    },
+  ];
+  
 
 const COLORS = {
   primary: '#fff',
