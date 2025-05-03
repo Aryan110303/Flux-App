@@ -41,11 +41,12 @@ const MySavings = ({ onClose }: MySavingsProps) => {
   const totalSavings = (existingSavings || 0) + (savings || 0);
   const emergencyProgress = totalSavings && emergencyGoal ? Math.min(Math.round((totalSavings / emergencyGoal) * 100), 100) : 0;
 
-  // Initialize with stored value, but don't show dashboard automatically
+  // Initialize with stored value and automatically show dashboard if savings exist
   useEffect(() => {
+    console.log('[MySavings] Existing savings value:', existingSavings);
     if (existingSavings !== undefined && existingSavings > 0) {
       setSavingsAmount(existingSavings.toString());
-      // Don't automatically show dashboard: setShowDashboard(true);
+      setShowDashboard(true); // Show dashboard automatically when savings exist
     }
   }, [existingSavings]);
 
@@ -57,6 +58,7 @@ const MySavings = ({ onClose }: MySavingsProps) => {
       return;
     }
     
+    console.log('[MySavings] Saving amount:', amount);
     setExistingSavings(amount);
     setShowDashboard(true);
   };
@@ -90,7 +92,10 @@ const MySavings = ({ onClose }: MySavingsProps) => {
         <StatusBar barStyle="light-content" />
         
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onClose}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={onClose}
+          >
             <Image 
               source={icons.backArrow} 
               style={{ width: 24, height: 24, tintColor: COLORS.primary }}

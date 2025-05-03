@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "MoneyApp",
-    "slug": "MoneyApp",
+    "name": "Flux",
+    "slug": "flux",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "flux",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -16,8 +16,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow MoneyApp to access your photos to update your profile picture.",
-        "NSCameraUsageDescription": "Allow MoneyApp to access your camera to update your profile picture."
+        "NSPhotoLibraryUsageDescription": "Allow Flux to access your photos to update your profile picture.",
+        "NSCameraUsageDescription": "Allow Flux to access your camera to update your profile picture."
       }
     },
     "android": {
@@ -31,7 +31,7 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.iaryan_sharma.MoneyApp"
+      "package": "com.iaryan_sharma.flux"
     },
     "web": {
       "bundler": "metro",

@@ -84,7 +84,7 @@ function AppContent() {
     <ToastProvider>
       <UserProvider userId={user?.$id}>
         <ExpenseProvider userId={user?.$id}>
-          <DebtProvider>
+          <DebtProvider userId={user?.$id}>
             <StatusBar style="light" backgroundColor="#1f2630" />
             <Stack screenOptions={{headerShown: false}} />
             <DevTools />

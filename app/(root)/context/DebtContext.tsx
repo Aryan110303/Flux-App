@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type PaymentStatus = 'unpaid' | 'partially_paid' | 'paid';
 
@@ -23,6 +24,8 @@ type DebtContextType = {
   updateDebt: (id: number, debt: Partial<Omit<Debt, 'id'>>) => void;
 };
 
+const STORAGE_KEY = 'debts_data';
+
 const DebtContext = createContext<DebtContextType | undefined>(undefined);
 
 export const useDebts = () => {
@@ -33,13 +36,66 @@ export const useDebts = () => {
   return context;
 };
 
-export const DebtProvider: React.FC<{ children: React.ReactNode }> = ({
+export const DebtProvider: React.FC<{ children: React.ReactNode; userId?: string }> = ({
   children,
+  userId,
 }) => {
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [storageKey, setStorageKey] = useState(STORAGE_KEY);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load debts when component mounts or userId changes
+  useEffect(() => {
+    const loadDebts = async () => {
+      let key = STORAGE_KEY;
+      if (userId) {
+        key = `${STORAGE_KEY}_${userId}`;
+      }
+      setStorageKey(key);
+      console.log('[DebtContext] Loading debts with key:', key);
+
+      try {
+        const storedDebts = await AsyncStorage.getItem(key);
+        console.log('[DebtContext] Found stored debts:', storedDebts);
+        
+        if (storedDebts) {
+          const parsedDebts = JSON.parse(storedDebts);
+          console.log('[DebtContext] Loading debts for userId:', userId);
+          setDebts(parsedDebts);
+        } else {
+          console.log('[DebtContext] No debts found for userId:', userId);
+          setDebts([]);
+        }
+      } catch (error) {
+        console.error('[DebtContext] Error loading debts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDebts();
+  }, [userId]);
+
+  // Save debts whenever they change
+  useEffect(() => {
+    if (isLoading) return;
+
+    const saveDebts = async () => {
+      try {
+        console.log('[DebtContext] Saving debts with key:', storageKey);
+        await AsyncStorage.setItem(storageKey, JSON.stringify(debts));
+        console.log('[DebtContext] Saved debts for userId:', userId);
+      } catch (error) {
+        console.error('[DebtContext] Error saving debts:', error);
+      }
+    };
+
+    saveDebts();
+  }, [debts, isLoading, storageKey]);
 
   const addDebt = (debt: Omit<Debt, 'id'>) => {
-    setDebts(prev => [...prev, { ...debt, id: Date.now(), status: 'unpaid' }]);
+    const newDebt = { ...debt, id: Date.now(), status: debt.status || 'unpaid' };
+    setDebts(prev => [...prev, newDebt]);
   };
 
   const deleteDebt = (id: number) => {
