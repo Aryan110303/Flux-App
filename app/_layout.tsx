@@ -13,7 +13,7 @@ import { StyleSheet, View, Platform } from "react-native";
 import { DebtProvider } from './(root)/context/DebtContext'
 import DevTools from './(root)/components/DevTools'
 import { Slot, useRouter, useSegments } from 'expo-router';
-import { checkSession, getCurrentUser } from '../lib/appwrite';
+import { checkSession, getCurrentUser, logout } from '../lib/appwrite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Onboarding from './(root)/components/Onboarding';
 
@@ -26,6 +26,7 @@ function AppContent() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -34,8 +35,24 @@ function AppContent() {
         if (hasSession) {
           const currentUser = await getCurrentUser();
           if (currentUser) {
+            console.log('[Layout] Session found, user authenticated:', currentUser.$id);
+            
+            // Check if this is a new user by looking for any previous data
+            const onboardingFlag = await AsyncStorage.getItem(`onboardingCompleted_${currentUser.$id}`);
+            const hasUserData = await AsyncStorage.getItem(`user_data_${currentUser.$id}`);
+            
+            // Set as new user if we've never seen this user ID before
+            const newUser = onboardingFlag === null && hasUserData === null;
+            setIsNewUser(newUser);
+            console.log('[Layout] User is new?', newUser);
+            
             setUser(currentUser);
+          } else {
+            console.log('[Layout] Session found but no user, clearing session');
+            await logout();
           }
+        } else {
+          console.log('[Layout] No active session found');
         }
       } catch (error) {
         console.error('Error checking auth:', error);
@@ -59,24 +76,54 @@ function AppContent() {
 
   useEffect(() => {
     // Check onboarding status for the current user
-    if (user && user.$id) {
-      AsyncStorage.getItem(`onboardingCompleted_${user.$id}`).then(val => {
-        setIsOnboardingCompleted(val === 'true');
-      });
-    } else {
-      setIsOnboardingCompleted(null);
-    }
-  }, [user]);
+    const checkOnboarding = async () => {
+      if (user && user.$id) {
+        try {
+          const val = await AsyncStorage.getItem(`onboardingCompleted_${user.$id}`);
+          console.log('[Layout] Onboarding status for user:', user.$id, 'is', val);
+          
+          // Only show onboarding if it's a new user (as determined in checkAuth)
+          // or if the onboarding flag is explicitly set to "false"
+          if (isNewUser) {
+            setIsOnboardingCompleted(false);
+          } else {
+            // For existing users, only show onboarding if explicitly marked as not completed
+            setIsOnboardingCompleted(val === "false" ? false : true);
+          }
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+          // Default to completed in case of error
+          setIsOnboardingCompleted(true);
+        }
+      } else {
+        setIsOnboardingCompleted(null);
+      }
+    };
+    
+    checkOnboarding();
+  }, [user, isNewUser]);
 
   const handleOnboardingComplete = async () => {
     if (user && user.$id) {
-      await AsyncStorage.setItem(`onboardingCompleted_${user.$id}`, 'true');
-      setIsOnboardingCompleted(true);
+      try {
+        // Mark onboarding as completed
+        await AsyncStorage.setItem(`onboardingCompleted_${user.$id}`, 'true');
+        // Also set a flag to indicate we've seen this user before
+        await AsyncStorage.setItem(`user_data_${user.$id}`, 'exists');
+        
+        console.log('[Layout] Onboarding marked as completed for user:', user.$id);
+        setIsOnboardingCompleted(true);
+        setIsNewUser(false);
+      } catch (error) {
+        console.error('Error saving onboarding status:', error);
+      }
     }
   };
 
-  // Show onboarding only if user is signed in and onboarding is not completed for this user
-  if (user && isOnboardingCompleted === false) {
+  // Show onboarding only if:
+  // 1. User is signed in, AND
+  // 2. Either it's a new user OR onboarding is explicitly set to false
+  if (user && (isNewUser || isOnboardingCompleted === false)) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
@@ -105,7 +152,7 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Keep the splash screen visible while we prepare the app
+        // Keep the splash screen visible while we fetch resources
         await SplashScreen.preventAutoHideAsync();
         // Wait for fonts to load
         if (fontsLoaded) {
