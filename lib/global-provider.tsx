@@ -20,6 +20,8 @@ interface GlobalContextType{
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 const STORAGE_KEY = 'user_data';
 
+const isDevelopment = __DEV__;
+
 export const GlobalProvider = ({children}:{children: ReactNode}) => {
     const [userState, setUserState] = useState<User | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -46,6 +48,13 @@ export const GlobalProvider = ({children}:{children: ReactNode}) => {
             setIsInitialized(true);
         }
     }, [loading]);
+
+    useEffect(() => {
+        if (!isDevelopment) {
+            console.log = () => {};
+            console.warn = () => {};
+        }
+    }, []);
 
     const isLoggedIn = !!userState;
 
