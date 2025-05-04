@@ -32,9 +32,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.CAMERA"
       ],
-      "package": "com.flux.fluxapp",
-      "versionCode": 1,
-      "enableHermes": true
+      "package": "com.iaryan_sharma.flux"
     },
     "web": {
       "bundler": "metro",
