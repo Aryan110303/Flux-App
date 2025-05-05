@@ -9,136 +9,112 @@ import { UserProvider } from './(root)/context/UserContext';
 import { ExpenseProvider } from './(root)/context/ExpenseContext'
 import { ToastProvider } from './(root)/context/ToastContext'
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StyleSheet, View, Platform } from "react-native";
+import { StyleSheet, View, Platform, Text, Alert } from "react-native"; // Added Alert
 import { DebtProvider } from './(root)/context/DebtContext'
-import DevTools from './(root)/components/DevTools'
-import { Slot, useRouter, useSegments } from 'expo-router';
-import { checkSession, getCurrentUser, logout } from '../lib/appwrite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Onboarding from './(root)/components/Onboarding';
+import React from 'react'; // Add this import
+import { checkSession } from "@/lib/appwrite";
+import { getCurrentUser } from "@/lib/appwrite";
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+// Add this debug function at the top
+const logError = (error: any, componentStack: string) => {
+  const errorMessage = `Error: ${error}\nComponent Stack: ${componentStack}`;
+  console.error(errorMessage);
+  // This will show the error on screen in production
+  Alert.alert('App Error', errorMessage);
+};
+
+// New ErrorBoundary implementation
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }> {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    logError(error, errorInfo.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Something went wrong!</Text>
+          <Text style={styles.errorDetails}>
+            {this.state.error && String(this.state.error)}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function AppContent() {
   const { user, setUser } = useGlobalContext();
-  const segments = useSegments();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const initApp = async () => {
       try {
-        const hasSession = await checkSession();
-        if (hasSession) {
-          const currentUser = await getCurrentUser();
-          if (currentUser) {
-            console.log('[Layout] Session found, user authenticated:', currentUser.$id);
-            
-            // Check if this is a new user by looking for any previous data
-            const onboardingFlag = await AsyncStorage.getItem(`onboardingCompleted_${currentUser.$id}`);
-            const hasUserData = await AsyncStorage.getItem(`user_data_${currentUser.$id}`);
-            
-            // Set as new user if we've never seen this user ID before
-            const newUser = onboardingFlag === null && hasUserData === null;
-            setIsNewUser(newUser);
-            console.log('[Layout] User is new?', newUser);
-            
-            setUser(currentUser);
-          } else {
-            console.log('[Layout] Session found but no user, clearing session');
-            await logout();
+        console.log('[Production] App initializing...');
+        // Test AsyncStorage
+        await AsyncStorage.setItem('test-key', 'test-value');
+        await AsyncStorage.getItem('test-key');
+        console.log('[Production] AsyncStorage working');
+        
+        // Your existing initialization code...
+        const checkAuth = async () => {
+          try {
+            const hasSession = await checkSession();
+            if (hasSession) {
+              const currentUser = await getCurrentUser();
+              if (currentUser) {
+                console.log('[Production] User authenticated:', currentUser.$id);
+                setUser(currentUser);
+              }
+            }
+          } catch (error) {
+            logError(error, 'Authentication check failed');
+          } finally {
+            setIsLoading(false);
           }
-        } else {
-          console.log('[Layout] No active session found');
-        }
+        };
+        
+        await checkAuth();
       } catch (error) {
-        console.error('Error checking auth:', error);
-      } finally {
+        logError(error, 'App initialization failed');
         setIsLoading(false);
       }
     };
-    checkAuth();
+
+    initApp();
   }, []);
 
-  useEffect(() => {
-    const inAuthGroup = segments[0] === 'sign-in';
-    if (!isLoading) {
-      if (!user && !inAuthGroup) {
-        router.replace('/sign-in');
-      } else if (user && inAuthGroup) {
-        router.replace('/');
-      }
-    }
-  }, [user, segments, isLoading]);
-
-  useEffect(() => {
-    // Check onboarding status for the current user
-    const checkOnboarding = async () => {
-      if (user && user.$id) {
-        try {
-          const val = await AsyncStorage.getItem(`onboardingCompleted_${user.$id}`);
-          console.log('[Layout] Onboarding status for user:', user.$id, 'is', val);
-          
-          // Only show onboarding if it's a new user (as determined in checkAuth)
-          // or if the onboarding flag is explicitly set to "false"
-          if (isNewUser) {
-            setIsOnboardingCompleted(false);
-          } else {
-            // For existing users, only show onboarding if explicitly marked as not completed
-            setIsOnboardingCompleted(val === "false" ? false : true);
-          }
-        } catch (error) {
-          console.error('Error checking onboarding status:', error);
-          // Default to completed in case of error
-          setIsOnboardingCompleted(true);
-        }
-      } else {
-        setIsOnboardingCompleted(null);
-      }
-    };
-    
-    checkOnboarding();
-  }, [user, isNewUser]);
-
-  const handleOnboardingComplete = async () => {
-    if (user && user.$id) {
-      try {
-        // Mark onboarding as completed
-        await AsyncStorage.setItem(`onboardingCompleted_${user.$id}`, 'true');
-        // Also set a flag to indicate we've seen this user before
-        await AsyncStorage.setItem(`user_data_${user.$id}`, 'exists');
-        
-        console.log('[Layout] Onboarding marked as completed for user:', user.$id);
-        setIsOnboardingCompleted(true);
-        setIsNewUser(false);
-      } catch (error) {
-        console.error('Error saving onboarding status:', error);
-      }
-    }
-  };
-
-  // Show onboarding only if:
-  // 1. User is signed in, AND
-  // 2. Either it's a new user OR onboarding is explicitly set to false
-  if (user && (isNewUser || isOnboardingCompleted === false)) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading app...</Text>
+      </View>
+    );
   }
 
   return (
-    <ToastProvider>
-      <UserProvider userId={user?.$id}>
-        <ExpenseProvider userId={user?.$id}>
-          <DebtProvider userId={user?.$id}>
-            <StatusBar style="light" backgroundColor="#1f2630" />
-            <Stack screenOptions={{headerShown: false}} />
-            <DevTools />
-          </DebtProvider>
-        </ExpenseProvider>
-      </UserProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <UserProvider>
+          <ExpenseProvider>
+            <DebtProvider>
+              <StatusBar style="light" backgroundColor="#1f2630" />
+              <Stack screenOptions={{headerShown: false}} />
+            </DebtProvider>
+          </ExpenseProvider>
+        </UserProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -150,47 +126,66 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    async function prepare() {
+    const prepare = async () => {
       try {
-        // Keep the splash screen visible while we fetch resources
+        console.log('[Production] Loading fonts...');
         await SplashScreen.preventAutoHideAsync();
-        // Wait for fonts to load
         if (fontsLoaded) {
-          // Hide the splash screen
+          console.log('[Production] Fonts loaded successfully');
           await SplashScreen.hideAsync();
         }
       } catch (e) {
-        console.warn(e);
+        logError(e, 'Font loading failed');
       }
-    }
+    };
     prepare();
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
-    return null;
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading resources...</Text>
+      </View>
+    );
   }
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <GlobalProvider>
-        <AppContent />
-      </GlobalProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.container}>
+        <GlobalProvider>
+          <AppContent />
+        </GlobalProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 
+// Add these new styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  tabBar: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 16,
-    left: 20,
-    right: 20,
-    elevation: 0,
-    backgroundColor: '#1F2937',
-    borderRadius: 15,
-    height: 70,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 10,
+  },
+  errorDetails: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
 });

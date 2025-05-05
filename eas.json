@@ -1,14 +1,14 @@
 {
   "cli": {
-    "version": ">= 5.9.1"
+    "version": ">= 5.9.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug"
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -18,13 +18,8 @@
       }
     },
     "production": {
-      "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle",
-        "image": "latest",
-        "env": {
-          "ANDROID_NDK_HOME": "/opt/android-ndk"
-        }
+        "buildType": "app-bundle"
       }
     }
   },
