@@ -2,7 +2,7 @@
   "expo": {
     "name": "Flux",
     "slug": "flux",
-    "version": "2.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon-white.png",
     "scheme": "flux",
@@ -32,7 +32,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "package": "com.iaryan_sharma.flux",
-      "versionCode": 6
+      "versionCode": 5
     },
     "web": {
       "bundler": "metro",
