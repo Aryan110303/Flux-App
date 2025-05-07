@@ -1,7 +1,7 @@
 {
-  "name": "fluxapp",
+  "name": "flux",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -28,6 +28,7 @@
     "expo": "~52.0.37",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.7",
+    "expo-dev-client": "^2.0.0",
     "expo-file-system": "^18.0.12",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",

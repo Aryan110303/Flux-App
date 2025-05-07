@@ -2,7 +2,7 @@
   "expo": {
     "name": "Flux",
     "slug": "flux",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon-white.png",
     "scheme": "flux",
@@ -19,8 +19,7 @@
         "NSPhotoLibraryUsageDescription": "Allow Flux to access your photos to update your profile picture.",
         "NSCameraUsageDescription": "Allow Flux to access your camera to update your profile picture."
       },
-      "bundleIdentifier": "com.flux.flux-app",
-      "enableHermes": true
+      "bundleIdentifier": "com.flux.flux-app"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,15 +28,16 @@
       },
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
       "package": "com.iaryan_sharma.flux",
-      "versionCode": 5
+      "versionCode": 6
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/icon.png",
+      "favicon": "./assets/images/icon-white.png",
       "backgroundColor": "#1f2630"
     },
     "plugins": [
@@ -80,6 +80,7 @@
         "projectId": "2391f9fa-951b-4f7f-bfbb-1cca16063626"
       }
     },
-    "jsEngine": "hermes"
+    "jsEngine": "hermes",
+    "owner": "iaryan_sharma"
   }
 }

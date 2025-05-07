@@ -4652,6 +4652,39 @@ expo-constants@*, expo-constants@~17.0.5, expo-constants@~17.0.7, expo-constants
     "@expo/config" "~10.0.11"
     "@expo/env" "~0.4.2"
 
+expo-dev-client@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/expo-dev-client/-/expo-dev-client-2.0.0.tgz"
+  integrity sha512-JlpAKLPAWisWKyyjAD9zScvRgS5V9Mmlqd1YGZ+CPpLORO4xQP6nQu/Skhud+orHGCAbPRhxpvRYR3m86ThXJg==
+  dependencies:
+    expo-dev-launcher "2.0.0"
+    expo-dev-menu "2.0.0"
+    expo-dev-menu-interface "1.0.0"
+    expo-manifests "~0.4.0"
+    expo-updates-interface "~0.8.0"
+
+expo-dev-launcher@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/expo-dev-launcher/-/expo-dev-launcher-2.0.0.tgz"
+  integrity sha512-sByEXzM9YoeeuB/Gwq8GEOgxOcbcV3Tq9gIXWsBlRTpupZO0xU7n9F4gn+edO8tgltoeHd5NbsW4ZHiBar2XAQ==
+  dependencies:
+    expo-dev-menu "2.0.0"
+    resolve-from "^5.0.0"
+    semver "^7.3.5"
+
+expo-dev-menu-interface@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/expo-dev-menu-interface/-/expo-dev-menu-interface-1.0.0.tgz"
+  integrity sha512-4lsVofTwV9oBM+zo7XhtmvbfiXD4I7I3Rqns6U0i6IOnH7OGBDpKvGZ5YikWPFGn6NOu8loqqd8S7inFIaxC0A==
+
+expo-dev-menu@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/expo-dev-menu/-/expo-dev-menu-2.0.0.tgz"
+  integrity sha512-pVXQ9HJ8AqefFJK25iUtXNqAcwyhfWrl60W6ieH+2hp574cHq6ymMOPb6o21q1R3xxNvH3fLmswdjobtEOJgqA==
+  dependencies:
+    expo-dev-menu-interface "1.0.0"
+    semver "^7.3.5"
+
 expo-file-system@^18.0.12, expo-file-system@~18.0.11:
   version "18.0.12"
   resolved "https://registry.npmjs.org/expo-file-system/-/expo-file-system-18.0.12.tgz"
@@ -4688,6 +4721,11 @@ expo-image-picker@^16.0.6:
   dependencies:
     expo-image-loader "~5.0.0"
 
+expo-json-utils@~0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/expo-json-utils/-/expo-json-utils-0.4.0.tgz"
+  integrity sha512-lK6gjea72XTYafpKNNJaMrBK5dYAX8LFLXrp/M1MKJU4Zy7EHd2rKrLwop3GZts8VdwLHeVcMko79SAbhe3i5Q==
+
 expo-keep-awake@~14.0.3:
   version "14.0.3"
   resolved "https://registry.npmjs.org/expo-keep-awake/-/expo-keep-awake-14.0.3.tgz"
@@ -4705,6 +4743,13 @@ expo-linking@*, expo-linking@~7.0.5:
   dependencies:
     expo-constants "~17.0.5"
     invariant "^2.2.4"
+
+expo-manifests@~0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/expo-manifests/-/expo-manifests-0.4.0.tgz"
+  integrity sha512-IdZjIYDxx4nH0Gb3X4T4/2YknmR/jSLxymAS0m7SfJ9V7Vlu/y0p3lNwUys9/JzihxX9PDIuOi/Y4/uqL6TlXg==
+  dependencies:
+    expo-json-utils "~0.4.0"
 
 expo-modules-autolinking@2.0.8:
   version "2.0.8"
@@ -4785,6 +4830,11 @@ expo-system-ui@~4.0.8:
   dependencies:
     "@react-native/normalize-colors" "0.76.7"
     debug "^4.3.2"
+
+expo-updates-interface@~0.8.0:
+  version "0.8.1"
+  resolved "https://registry.npmjs.org/expo-updates-interface/-/expo-updates-interface-0.8.1.tgz"
+  integrity sha512-1TPFCTQFHMZbltFGnxig3PbN/b6nO4T0RyL8XqdmYvQY0ElOCprZXQQ8vNDqeLYHgausG1lD4OyJwFzh2SNBSA==
 
 expo-web-browser@~14.0.2:
   version "14.0.2"
