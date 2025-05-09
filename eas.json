@@ -15,11 +15,17 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "SKIP_NATIVEWIND_TRANSFORM": "1"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "SKIP_NATIVEWIND_TRANSFORM": "1"
       }
     }
   },
